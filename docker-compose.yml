@@ -1,41 +1,25 @@
-version: "3.9"
-
 services:
   backend:
-    build: ./backend
-    container_name: openimpro-backend
-    env_file: .env
-    command: sh -c "yarn install && node src/index.js"
-    ports:
-      - "3000:3000"
-    depends_on:
-      - db
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
     volumes:
       - ./backend:/app
-    restart: unless-stopped
-
-  frontend:
-    build: ./frontend
-    container_name: openimpro-frontend
+      - /app/node_modules # Avoids overwriting node_modules with the host's
+    env_file:
+      - ./backend/.env
     ports:
-      - "8080:80"
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
     depends_on:
       - backend
-    restart: unless-stopped
-
-  db:
-    image: postgres:16
-    container_name: openimpro-db
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: openimpro
-      POSTGRES_USER: openimpro
-      POSTGRES_PASSWORD: openimpro
-    volumes:
-      - ./db/db_data:/var/lib/postgresql/data
-      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: unless-stopped
-
-volumes:
-  db_data:

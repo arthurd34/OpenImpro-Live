@@ -1,0 +1,8 @@
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json yarn.lock* ./
+RUN yarn install
+COPY . .
+EXPOSE 5173
+# Vite needs --host to work inside Docker
+CMD ["yarn", "dev", "--host"]

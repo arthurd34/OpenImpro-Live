@@ -1,13 +1,17 @@
 {
-  "name": "openimpro-backend",
+  "name": "open-impro-backend",
   "version": "1.0.0",
+  "main": "src/server.js",
+  "license": "MIT",
   "scripts": {
-    "dev": "node src/index.js"
+    "dev": "nodemon src/server.js"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
     "express": "^4.18.2",
-    "socket.io": "^4.7.1",
-    "pg": "^8.11.1",
-    "dotenv": "^16.3.1"
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
