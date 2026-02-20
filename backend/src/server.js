@@ -7,21 +7,41 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
-let currentActIndex = 0;
+let currentSceneIndex = 0;
 let activeUsers = [];
 let pendingRequests = [];
-let allAnswers = [];
+let allProposals = [];
 
 const showConfig = {
-    acts: [
-        { id: 'WAITING', title: "Logo / Waiting", type: "WAITING" },
-        { id: 'ANSWER', title: "Crazy Blind Test", type: "ANSWER" }
+    scenes: [
+        {
+            id: 'CONNECTION', title: "Connexion", type: "CONNECT", params: {
+                url: "http://url.lol",
+            }
+        },
+        {
+            id: 'WAITING', title: "Logo / Waiting", type: "WAITING", params: {
+                titleDisplay: "Quel est la chanson jouée ?",
+                maxProposals: 1,
+            }
+        },
+        {
+            id: 'PROPOSAL', title: "Crazy Blind Test", type: "PROPOSAL", params: {
+                theme: "Quel est la chanson jouée ?",
+                maxProposals: 1,
+            }
+        },
+        {
+            id: 'PROMO', title: "Promotion", type: "PROMO", params: {
+                titleDisplay: "Instant promotionnel !"
+            }
+        },
     ]
 };
 
 // --- HELPERS ---
 function getSyncData() {
-    return { currentAct: showConfig.acts[currentActIndex], currentIndex: currentActIndex, playlist: showConfig.acts };
+    return { currentScene: showConfig.scenes[currentSceneIndex], currentIndex: currentSceneIndex, playlist: showConfig.scenes };
 }
 
 function sendSync(target) { target.emit('sync_state', getSyncData()); }
@@ -38,10 +58,10 @@ io.on('connection', (socket) => {
         if (password === process.env.ADMIN_PASSWORD) {
             socket.join('admin_room');
             socket.emit('login_success');
-            sendSync(socket);
+            socket.emit('sync_state', getSyncData());
             socket.emit('admin_user_list', activeUsers);
             socket.emit('admin_pending_list', pendingRequests);
-            socket.emit('admin_sync_answers', allAnswers);
+            socket.emit('admin_sync_proposals', allProposals);
         }
     });
 
@@ -55,7 +75,7 @@ io.on('connection', (socket) => {
                 existingUser.connected = true;
                 socket.emit('status_update', { status: 'approved', name: existingUser.name });
                 socket.emit('sync_state', getSyncData());
-                socket.emit('user_history_update', existingUser.answers || []);
+                socket.emit('user_history_update', existingUser.proposals || []);
                 refreshAdminLists();
             } else {
                 socket.emit('status_update', { status: 'session_expired', reason: "Session expirée." });
@@ -65,7 +85,7 @@ io.on('connection', (socket) => {
             if (nameExists) {
                 return socket.emit('status_update', { status: 'rejected', reason: `Le nom "${data.name}" est déjà pris.` });
             }
-            const req = { socketId: socket.id, name: data.name, connected: true, answers: [] };
+            const req = { socketId: socket.id, name: data.name, connected: true, proposals: [] };
             pendingRequests.push(req);
             io.to('admin_room').emit('admin_new_request', req);
         }
@@ -82,15 +102,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('send_answer', (data) => {
+    socket.on('send_proposal', (data) => {
         const user = activeUsers.find(u => u.name === data.userName);
         if (!user) return;
 
-        if (user.answers.length >= 5) {
+        if (user.proposals.length >= 5) {
             return socket.emit('status_update', { status: 'approved', message: "Limite de 5 réponses atteinte !" });
         }
 
-        const newAnswer = {
+        const newProposal = {
             id: Date.now(),
             userName: data.userName,
             text: data.text,
@@ -98,60 +118,55 @@ io.on('connection', (socket) => {
             isWinner: false
         };
 
-        user.answers.push(newAnswer);
-        allAnswers.push(newAnswer);
+        user.proposals.push(newProposal);
+        allProposals.push(newProposal);
 
-        io.to('admin_room').emit('admin_new_answer', newAnswer);
-        socket.emit('user_history_update', user.answers);
+        io.to('admin_room').emit('admin_new_proposal', newProposal);
+        socket.emit('user_history_update', user.proposals);
     });
 
-    // --- UNIQUE APPROVE LOGIC (CORRIGÉ) ---
-    socket.on('admin_approve_answer', (ans) => {
-        // 1. Marquer comme gagnant dans la liste globale
-        const winnerGlobal = allAnswers.find(a => a.id === ans.id);
+    socket.on('admin_approve_proposal', (ans) => {
+        const winnerGlobal = allProposals.find(a => a.id === ans.id);
         if (winnerGlobal) winnerGlobal.isWinner = true;
 
-        // 2. Marquer comme gagnant dans l'historique de l'utilisateur pour le trophée 🏆
         const user = activeUsers.find(u => u.name === ans.userName);
-        if (user && user.answers) {
-            const winnerLocal = user.answers.find(a => a.id === ans.id);
+        if (user && user.proposals) {
+            const winnerLocal = user.proposals.find(a => a.id === ans.id);
             if (winnerLocal) winnerLocal.isWinner = true;
-            // Envoyer la mise à jour de l'historique au téléphone du gagnant
-            io.to(user.socketId).emit('user_history_update', user.answers);
+            io.to(user.socketId).emit('user_history_update', user.proposals);
         }
 
-        // 3. Afficher sur l'écran géant et mettre à jour la vue Admin
         io.emit('show_on_screen', winnerGlobal || ans);
-        io.to('admin_room').emit('admin_sync_answers', allAnswers);
+        io.to('admin_room').emit('admin_sync_proposals', allProposals);
     });
 
-    socket.on('admin_delete_answer', (answerId) => {
-        allAnswers = allAnswers.filter(a => a.id !== answerId);
+    socket.on('admin_delete_proposal', (proposalId) => {
+        allProposals = allProposals.filter(a => a.id !== proposalId);
         activeUsers.forEach(u => {
-            if(u.answers) {
-                u.answers = u.answers.filter(a => a.id !== answerId);
-                io.to(u.socketId).emit('user_history_update', u.answers);
+            if(u.proposals) {
+                u.proposals = u.proposals.filter(a => a.id !== proposalId);
+                io.to(u.socketId).emit('user_history_update', u.proposals);
             }
         });
-        io.to('admin_room').emit('admin_sync_answers', allAnswers);
+        io.to('admin_room').emit('admin_sync_proposals', allProposals);
     });
 
-    socket.on('admin_clear_all_answers', () => {
-        allAnswers = [];
+    socket.on('admin_clear_all_proposals', () => {
+        allProposals = [];
         activeUsers.forEach(u => {
-            u.answers = [];
+            u.proposals = [];
             io.to(u.socketId).emit('user_history_update', []);
         });
-        io.to('admin_room').emit('admin_sync_answers', []);
+        io.to('admin_room').emit('admin_sync_proposals', []);
     });
 
     socket.on('admin_kick_user', ({ socketId, reason, isRefusal }) => {
         const user = activeUsers.find(u => u.socketId === socketId);
         if (user) {
-            allAnswers = allAnswers.filter(a => a.userName !== user.name);
-            io.to('admin_room').emit('admin_sync_answers', allAnswers);
+            allProposals = allProposals.filter(a => a.userName !== user.name);
+            io.to('admin_room').emit('admin_sync_proposals', allProposals);
         }
-        io.to(socketId).emit('status_update', { status: isRefusal ? 'rejected' : 'kicked', reason: reason || "Action Admin" });
+        io.to(socketId).emit('status_update', { status: isRefusal ? 'rejected' : 'kicked', reason: reason || "Sceneion Admin" });
         activeUsers = activeUsers.filter(u => u.socketId !== socketId);
         pendingRequests = pendingRequests.filter(u => u.socketId !== socketId);
         refreshAdminLists();
@@ -162,7 +177,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('admin_set_act', (index) => {
-        currentActIndex = index;
+        currentSceneIndex = index;
         io.emit('sync_state', getSyncData());
     });
 
@@ -174,4 +189,4 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(process.env.PORT || 3000, () => console.log("🚀 Server Beta Ready"));
+server.listen(process.env.PORT || 3000, () => console.log("Server Ready"));

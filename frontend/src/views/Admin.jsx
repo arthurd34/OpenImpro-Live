@@ -9,20 +9,20 @@ const AdminView = () => {
     const [state, setState] = useState(null);
     const [requests, setRequests] = useState([]);
     const [users, setUsers] = useState([]);
-    const [answers, setAnswers] = useState([]);
+    const [proposals, setProposals] = useState([]);
 
     useEffect(() => {
         socket.on('login_success', () => setAuth(true));
         socket.on('sync_state', (s) => {
             setState(s);
-            setAnswers([]);
+            setProposals([]);
         });
         socket.on('admin_pending_list', (l) => setRequests(l));
         socket.on('admin_user_list', (l) => setUsers(l));
         socket.on('admin_new_request', (r) => setRequests(prev => [...prev, r]));
-        socket.on('admin_new_answer', (a) => setAnswers(prev => [a, ...prev]));
-        socket.on('admin_sync_answers', (list) => setAnswers(list));
-        socket.on('admin_new_answer', (ans) => setAnswers(prev => [ans, ...prev]));
+        socket.on('admin_new_proposal', (a) => setProposals(prev => [a, ...prev]));
+        socket.on('admin_sync_proposals', (list) => setProposals(list));
+        socket.on('admin_new_proposal', (ans) => setProposals(prev => [ans, ...prev]));
         return () => socket.off();
     }, []);
 
@@ -64,7 +64,7 @@ const AdminView = () => {
             </div>
 
             <div className="card">
-                <h3>Act Selection</h3>
+                <h3>Scene Selection</h3>
                 <div style={{display:'flex', gap:'10px'}}>
                     {state?.playlist.map((act, i) => (
                         <button
@@ -115,25 +115,25 @@ const AdminView = () => {
                 </section>
             </div>
 
-            {state?.currentAct.type === 'ANSWER' && (
+            {state?.currentScene.type === 'PROPOSAL' && (
                 <section className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
                         <h3>Réponses en direct</h3>
-                        <button className="btn-danger" onClick={() => socket.emit('admin_clear_all_answers')}>
+                        <button className="btn-danger" onClick={() => socket.emit('admin_clear_all_proposals')}>
                             TOUT EFFACER
                         </button>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {answers.map(ans => (
+                        {proposals.map(ans => (
                             <div key={ans.id} className="user-row" style={{ borderLeft: ans.isWinner ? '4px solid gold' : 'none' }}>
                                 <div style={{ flex: 1 }}>
                                     <small style={{ opacity: 0.5 }}>[{ans.timestamp}]</small>
                                     <strong style={{ color: 'var(--primary)', marginLeft: '10px' }}>{ans.userName}:</strong> {ans.text}
                                 </div>
                                 <div style={{ display: 'flex', gap: '5px' }}>
-                                    <button onClick={() => socket.emit('admin_approve_answer', ans)}>Gagnant</button>
-                                    <button className="btn-danger" onClick={() => socket.emit('admin_delete_answer', ans.id)}>X</button>
+                                    <button onClick={() => socket.emit('admin_approve_proposal', ans)}>Gagnant</button>
+                                    <button className="btn-danger" onClick={() => socket.emit('admin_delete_proposal', ans.id)}>X</button>
                                 </div>
                             </div>
                         ))}

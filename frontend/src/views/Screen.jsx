@@ -23,7 +23,7 @@ const ScreenView = () => {
 
     return (
         <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            {gameState.currentAct.type === 'WAITING' ? (
+            {gameState.currentScene.type === 'WAITING' ? (
                 <h1 style={{ fontSize: '6rem', color: 'var(--primary)' }}>OPEN IMPRO LIVE</h1>
             ) : (
                 <div style={{textAlign: 'center'}}>
@@ -33,7 +33,7 @@ const ScreenView = () => {
                             <h1 style={{fontSize:'7rem'}}>{winner.text}</h1>
                         </div>
                     ) : (
-                        <h1 style={{fontSize:'4rem'}}>{gameState.currentAct.title}</h1>
+                        <h1 style={{fontSize:'4rem'}}>{gameState.currentScene.title}</h1>
                     )}
                 </div>
             )}

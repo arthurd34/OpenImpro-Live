@@ -8,7 +8,7 @@ const PublicView = () => {
     const [status, setStatus] = useState('idle');
     const [message, setMessage] = useState('');
     const [gameState, setGameState] = useState(null);
-    const [answer, setAnswer] = useState('');
+    const [proposal, setProposal] = useState('');
     const [history, setHistory] = useState([]);
 
     const nameRef = useRef('');
@@ -43,8 +43,8 @@ const PublicView = () => {
             localStorage.setItem('player_name', newName);
         });
 
-        socket.on('user_history_update', (userAnswers) => {
-            setHistory(userAnswers);
+        socket.on('user_history_update', (userProposals) => {
+            setHistory(userProposals);
         });
 
         return () => {
@@ -91,30 +91,33 @@ const PublicView = () => {
         );
     }
 
+    const sceneParams = gameState?.currentScene?.params ?? {};
+    const sceneType = gameState?.currentScene.type;
+
     return (
         <div className="card">
             <h3>Joueur: {name}</h3>
             <hr />
-            {gameState?.currentAct.type === 'ANSWER' && (
+            {sceneType === 'PROPOSAL' && (
                 <>
                     <div className="input-group">
                         <input
-                            value={answer}
-                            onChange={e => setAnswer(e.target.value)}
-                            placeholder={history.length >= 5 ? "Limite atteinte" : "Ta réponse..."}
-                            disabled={history.length >= 5}
+                            value={proposal}
+                            onChange={e => setProposal(e.target.value)}
+                            placeholder={history.length >= (sceneParams?.maxProposals ?? 3) ? "Limite d'envois atteinte" : gameState.currentScene.params.theme}
+                            disabled={history.length >= (sceneParams?.maxProposals ?? 3)}
                         />
                         <button
                             className="btn-primary"
-                            onClick={() => { socket.emit('send_answer', {userName: name, text: answer}); setAnswer(''); }}
-                            disabled={!answer.trim() || history.length >= 5}
+                            onClick={() => { socket.emit('send_proposal', {userName: name, text: proposal}); setProposal(''); }}
+                            disabled={!proposal.trim() || history.length >= (sceneParams?.maxProposals ?? 3)}
                         >
                             Envoyer
                         </button>
                     </div>
 
                     <div style={{ marginTop: '20px' }}>
-                        <h4>Tes envois ({history.length}/5) :</h4>
+                        <h4>Liste de vos propositions: {history.length}/{gameState.currentScene.params.maxProposals}</h4>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                             {history.map(h => (
                                 <div key={h.id} style={{

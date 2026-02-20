@@ -15,7 +15,7 @@ OpenImpro Live est une plateforme open-source qui permet de connecter le public 
 OpenImpro Live allows an audience to:
 * Join a live performance using a local network IP.
 * Choose a display name.
-* Submit proposals or answers in real time.
+* Submit proposals or proposals in real time.
 
 All audience interactions are:
 * Collected live via WebSockets.
@@ -30,7 +30,7 @@ All audience interactions are:
 * Real-time communication: Powered by Socket.io.
 * Session recovery: Automatic reconnection for users if the browser is closed.
 * Duplicate name protection: Prevents two users from using the same identity.
-* Live Tools: Mark winners, delete individual answers, or clear history.
+* Live Tools: Mark winners, delete individual proposals, or clear history.
 * Timestamps: Precision tracking of every audience submission.
 
 ---
@@ -69,7 +69,7 @@ The project is composed of four main components:
 
 OpenImpro Live provides interaction modes that can be combined and orchestrated live:
 * Waiting Mode: Displays the main title or logo.
-* Answer Mode: Allows the audience to submit text (proposals, constraints, blind test answers).
+* Proposal Mode: Allows the audience to submit text (proposals, constraints, blind test proposals).
 
 ---
 
