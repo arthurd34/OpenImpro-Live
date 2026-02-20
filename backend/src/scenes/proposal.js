@@ -1,9 +1,13 @@
 module.exports = {
     send_proposal: (socket, io, data, context) => {
-        const { activeUsers, allProposals } = context;
+        const { activeUsers, allProposals, currentScene } = context;
         const user = activeUsers.find(u => u.name === data.userName);
+        const maxAllowed = currentScene?.params?.maxProposals || 3;
 
-        if (!user || user.proposals.length >= 5) return;
+        if (!user || user.proposals.length >= maxAllowed) {
+            console.log(`Refusé : limite atteinte pour ${data.userName}`);
+            return;
+        }
 
         const newProposal = {
             id: Date.now(),
@@ -16,7 +20,9 @@ module.exports = {
         user.proposals.push(newProposal);
         allProposals.push(newProposal);
 
-        io.to('admin_room').emit('admin_new_proposal', newProposal);
+        // OPTION FIABLE : On synchronise toute la liste
+        io.to('admin_room').emit('admin_sync_proposals', allProposals);
+
         socket.emit('user_history_update', user.proposals);
     },
 
@@ -33,6 +39,7 @@ module.exports = {
         }
 
         io.emit('show_on_screen', winner || ans);
+        // On synchronise toute la liste
         io.to('admin_room').emit('admin_sync_proposals', allProposals);
     }
 };

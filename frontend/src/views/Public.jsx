@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 
-//scenes imports
+// Imports des composants de scènes
+import ConnectionScene from '../components/scenes/ConnectionScene';
 import ProposalScene from '../components/scenes/ProposalScene';
 import WaitingScene from '../components/scenes/WaitingScene';
 
@@ -48,12 +49,7 @@ const PublicView = () => {
 
         socket.on('user_history_update', (userProposals) => setHistory(userProposals));
 
-        return () => {
-            socket.off('status_update');
-            socket.off('sync_state');
-            socket.off('name_updated');
-            socket.off('user_history_update');
-        };
+        return () => socket.off();
     }, []);
 
     const handleJoin = (e) => {
@@ -64,49 +60,40 @@ const PublicView = () => {
         socket.emit('join_request', { name: name.trim(), isReconnect: false });
     };
 
-    // --- AFFICHAGE LOGIN / PENDING ---
-    if (status === 'idle' || status === 'session_expired' || status === 'rejected' || status === 'kicked') {
+    // --- ROUTAGE PRINCIPAL ---
+
+    // Si l'utilisateur n'est pas encore approuvé, on affiche la scène de connexion
+    if (status !== 'approved') {
         return (
-            <div className="card">
-                <h2>Spectacle Live</h2>
-                <form onSubmit={handleJoin}>
-                    <input placeholder="Votre Nom" value={name} onChange={e => setName(e.target.value)} />
-                    <button type="submit" className="btn-primary" style={{width:'100%', marginTop:'10px'}}>Rejoindre</button>
-                </form>
-                {message && <div className="error-box" style={{marginTop:'15px'}}>{message}</div>}
-            </div>
+            <ConnectionScene
+                name={name}
+                setName={setName}
+                handleJoin={handleJoin}
+                status={status}
+                message={message}
+            />
         );
     }
 
-    if (status === 'pending') {
-        return (
-            <div className="card" style={{textAlign:'center'}}><div className="spinner"></div><h3>Connexion...</h3></div>
-        );
-    }
-
-    // --- ROUTAGE DES SCENES ---
-    const renderScene = () => {
-        const sceneType = gameState?.currentScene?.type;
-        const props = { socket, name, gameState, history };
-
-        switch (sceneType) {
-            case 'PROPOSAL':
-                return <ProposalScene {...props} />;
-            case 'WAITING':
-                return <WaitingScene {...props} />;
-            default:
-                return <div style={{textAlign:'center'}}>Préparez vos téléphones...</div>;
-        }
-    };
+    // Si approuvé, on affiche le header et la scène de jeu actuelle
+    const sceneType = gameState?.currentScene?.type;
+    const sceneProps = { socket, name, gameState, history };
 
     return (
         <div className="card">
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0 }}>Joueur: {name}</h3>
+                <h3 style={{ margin: 0 }}>{name}</h3>
                 <div className="status-dot" style={{ background: '#2ecc71', width: 10, height: 10, borderRadius: '50%' }}></div>
             </header>
             <hr />
-            {renderScene()}
+
+            {(() => {
+                switch (sceneType) {
+                    case 'PROPOSAL': return <ProposalScene {...sceneProps} />;
+                    case 'WAITING':  return <WaitingScene {...sceneProps} />;
+                    default: return <div style={{textAlign:'center', padding:'20px'}}>Connecté ! Attente du début...</div>;
+                }
+            })()}
         </div>
     );
 };

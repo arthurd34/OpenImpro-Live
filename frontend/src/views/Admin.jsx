@@ -10,6 +10,7 @@ const AdminView = () => {
     const [requests, setRequests] = useState([]);
     const [users, setUsers] = useState([]);
     const [proposals, setProposals] = useState([]);
+    const [allowJoins, setAllowJoins] = useState(true);
 
     useEffect(() => {
         socket.on('login_success', () => setAuth(true));
@@ -23,6 +24,7 @@ const AdminView = () => {
         socket.on('admin_new_proposal', (a) => setProposals(prev => [a, ...prev]));
         socket.on('admin_sync_proposals', (list) => setProposals(list));
         socket.on('admin_new_proposal', (ans) => setProposals(prev => [ans, ...prev]));
+        socket.on('admin_joins_status', (status) => setAllowJoins(status));
         return () => socket.off();
     }, []);
 
@@ -41,17 +43,15 @@ const AdminView = () => {
         }
     };
 
-    const clearOffline = () => {
-        if (window.confirm("Remove all disconnected users?")) {
-            socket.emit('admin_clear_offline');
-        }
+    const toggleInscriptions = () => {
+        socket.emit('admin_toggle_joins', !allowJoins);
     };
 
     if (!auth) return (
         <div className="card" style={{maxWidth:'400px', margin:'50px auto'}}>
             <form onSubmit={(e) => { e.preventDefault(); socket.emit('admin_login', pass); }}>
-                <input type="password" placeholder="Admin Pass" onChange={e => setPass(e.target.value)} />
-                <button className="btn-primary" type="submit">Login</button>
+                <input type="password" placeholder="Mot de passe Admin" onChange={e => setPass(e.target.value)} />
+                <button className="btn-primary" type="submit">Connexion</button>
             </form>
         </div>
     );
@@ -59,18 +59,17 @@ const AdminView = () => {
     return (
         <div className="app-container">
             <div className="card" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                <h2>Admin Panel</h2>
-                <button onClick={clearOffline}>Clear Offline</button>
+                <h2>Panneau d'administration</h2>
             </div>
 
             <div className="card">
-                <h3>Scene Selection</h3>
+                <h3>Sélection de la Scène</h3>
                 <div style={{display:'flex', gap:'10px'}}>
                     {state?.playlist.map((act, i) => (
                         <button
                             key={act.id}
                             className={state.currentIndex === i ? "btn-primary" : ""}
-                            onClick={() => socket.emit('admin_set_act', i)}
+                            onClick={() => socket.emit('admin_set_scene', i)}
                         >
                             {act.title}
                         </button>
@@ -78,22 +77,41 @@ const AdminView = () => {
                 </div>
             </div>
 
+            <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '2px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <label className="switch">
+                        <input type="checkbox" checked={allowJoins} onChange={toggleInscriptions} />
+                        <span className="slider"></span>
+                    </label>
+                    <div>
+                        <h4 style={{ margin: 0 }}>Inscriptions {allowJoins ? 'Ouvertes' : 'Fermées'}</h4>
+                        <small style={{ opacity: 0.6 }}>
+                            {allowJoins ? 'Le public peut envoyer des demandes' : 'Les nouveaux joueurs sont bloqués'}
+                        </small>
+                    </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{users.length}</span>
+                    <small style={{ display: 'block', opacity: 0.5 }}>JOUEURS</small>
+                </div>
+            </div>
+
             <div className="admin-grid">
                 <section className="card">
-                    <h3>Waiting ({requests.length})</h3>
+                    <h3>En attente ({requests.length})</h3>
                     {requests.map(r => (
                         <div key={r.socketId} className="user-row">
                             <span>{r.name}</span>
                             <div>
-                                <button onClick={() => approve(r.socketId)}>Accept</button>
-                                <button className="btn-danger" onClick={() => handleKick(r.socketId, true)}>Refuse</button>
+                                <button onClick={() => approve(r.socketId)}>Accepter</button>
+                                <button className="btn-danger" onClick={() => handleKick(r.socketId, true)}>Refuser</button>
                             </div>
                         </div>
                     ))}
                 </section>
 
                 <section className="card">
-                    <h3>In Hall ({users.length})</h3>
+                    <h3>En jeu ({users.length})</h3>
                     {users.map(u => (
                         <div key={u.socketId} className="user-row">
                             <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
@@ -105,10 +123,10 @@ const AdminView = () => {
                             </div>
                             <div>
                                 <button onClick={() => {
-                                    const newName = prompt("New name?", u.name);
+                                    const newName = prompt("Nouveau nom ?", u.name);
                                     if(newName) socket.emit('admin_rename_user', {socketId: u.socketId, newName});
-                                }}>Rename</button>
-                                <button className="btn-danger" onClick={() => handleKick(u.socketId, false)}>Kick</button>
+                                }}>Renommer</button>
+                                <button className="btn-danger" onClick={() => handleKick(u.socketId, false)}>Exclure</button>
                             </div>
                         </div>
                     ))}
@@ -129,7 +147,7 @@ const AdminView = () => {
                             <div key={ans.id} className="user-row" style={{ borderLeft: ans.isWinner ? '4px solid gold' : 'none' }}>
                                 <div style={{ flex: 1 }}>
                                     <small style={{ opacity: 0.5 }}>[{ans.timestamp}]</small>
-                                    <strong style={{ color: 'var(--primary)', marginLeft: '10px' }}>{ans.userName}:</strong> {ans.text}
+                                    <strong style={{ color: 'var(--primary)', marginLeft: '10px' }}>{ans.userName} :</strong> {ans.text}
                                 </div>
                                 <div style={{ display: 'flex', gap: '5px' }}>
                                     <button onClick={() => socket.emit('admin_approve_proposal', ans)}>Gagnant</button>
