@@ -1,20 +1,29 @@
+// src/components/admin/SceneControl.jsx
 import React from 'react';
 import ProposalAdmin from './ProposalAdmin';
+import { t } from '../../utils/i18n';
 
-const SceneControl = ({ currentScene, proposals, socket }) => {
+const SceneControl = ({ currentScene, proposals, socket, token, emitAdmin, ui }) => {
     if (!currentScene) return null;
 
+    // --- RENDER BY SCENE TYPE ---
     switch (currentScene.type) {
         case 'PROPOSAL':
-            return <ProposalAdmin proposals={proposals} socket={socket} />;
-
-        // C'est ici que tu ajouteras tes futurs modes :
-        // case 'QUIZ': return <QuizAdmin ... />;
+            return (
+                <ProposalAdmin
+                    proposals={proposals}
+                    socket={socket}
+                    token={token}
+                    emitAdmin={emitAdmin}
+                    ui={ui}
+                />
+            );
 
         default:
             return (
                 <div className="card" style={{ textAlign: 'center', opacity: 0.5 }}>
-                    La scène actuelle (<strong>{currentScene.type}</strong>) n'a pas de contrôles spécifiques.
+                    {/* 100% Translated via i18n helper */}
+                    {t(ui, 'ADMIN_NO_CONTROLS_FOR_SCENE', { name: currentScene.title })}
                 </div>
             );
     }

@@ -1,3 +1,5 @@
+// backend/src/i18n.js
+
 const translations = {
     fr: {
         // --- CONNECTION SCENE ---
@@ -29,18 +31,30 @@ const translations = {
         REFRESH_NOW: "Actualiser maintenant",
         ERROR_NAME_TAKEN: "Ce nom est déjà utilisé.",
         ERROR_SESSION_EXPIRED: "Session expirée.",
+        ERROR_JOINS_CLOSED: "Les inscriptions sont fermées.",
 
         // --- ADMIN PANEL ---
-        ADMIN_TITLE: "Gestion Live",
-        ADMIN_STATUS_ONLINE: "Serveur Online",
-        ADMIN_SCENE_SELECT: "Scène Actuelle",
+        ADMIN_LOGIN_TITLE: "Accès Régie",
+        ADMIN_INPUT_PASS_PH: "Mot de passe",
+        ADMIN_REMEMBER_ME: "Se souvenir de moi",
+        ADMIN_BTN_LOGIN: "Connexion",
+        ADMIN_BTN_LOGOUT: "Déconnexion",
+        ADMIN_DASHBOARD_TITLE: "Tableau de Bord",
+        ADMIN_CURRENT_SCENE_LABEL: "Scène Actuelle",
         ADMIN_JOINS_OPEN: "Inscriptions Ouvertes",
         ADMIN_JOINS_CLOSED: "Inscriptions Fermées",
-        ADMIN_PENDING_REQ: "Demandes",
-        ADMIN_PLAYERS_ONLINE: "Joueurs en ligne",
+        ADMIN_TITLE_REQUESTS: "Demandes ({{count}})",
+        ADMIN_TITLE_PLAYERS: "Joueurs ({{count}})",
         ADMIN_EMPTY_LIST: "Aucune donnée disponible",
-        ADMIN_CLEAR_LIST: "VIDER LA LISTE",
-        ADMIN_PROPOSALS_LIVE: "Réponses Public"
+        ADMIN_BTN_APPROVE: "Accepter",
+        ADMIN_BTN_EDIT: "Éditer",
+        ADMIN_BTN_KICK: "Exclure",
+        ADMIN_PROMPT_RENAME: "Quel est le nouveau nom ?",
+        ADMIN_PROMPT_KICK_REASON: "Motif de l'exclusion ?",
+        ADMIN_PROMPT_REFUSE_REASON: "Motif du refus ?",
+        ADMIN_PROPOSALS_LIVE: "Réponses Public",
+        BTN_REFRESH: "Actualiser",
+        ADMIN_NO_CONTROLS_FOR_SCENE: "La scène actuelle ({{name}}) n'a pas de contrôles spécifiques.",
     },
     en: {
         // --- CONNECTION SCENE ---
@@ -72,18 +86,30 @@ const translations = {
         REFRESH_NOW: "Refresh now",
         ERROR_NAME_TAKEN: "This name is already taken.",
         ERROR_SESSION_EXPIRED: "Session expired.",
+        ERROR_JOINS_CLOSED: "Registrations are closed.",
 
         // --- ADMIN PANEL ---
-        ADMIN_TITLE: "Live Management",
-        ADMIN_STATUS_ONLINE: "Server Online",
-        ADMIN_SCENE_SELECT: "Current Scene",
+        ADMIN_LOGIN_TITLE: "Control Room Access",
+        ADMIN_INPUT_PASS_PH: "Password",
+        ADMIN_REMEMBER_ME: "Remember me",
+        ADMIN_BTN_LOGIN: "Login",
+        ADMIN_BTN_LOGOUT: "Logout",
+        ADMIN_DASHBOARD_TITLE: "Dashboard",
+        ADMIN_CURRENT_SCENE_LABEL: "Current Scene",
         ADMIN_JOINS_OPEN: "Registrations Open",
         ADMIN_JOINS_CLOSED: "Registrations Closed",
-        ADMIN_PENDING_REQ: "Requests",
-        ADMIN_PLAYERS_ONLINE: "Online Players",
+        ADMIN_TITLE_REQUESTS: "Requests ({{count}})",
+        ADMIN_TITLE_PLAYERS: "Players ({{count}})",
         ADMIN_EMPTY_LIST: "No data available",
-        ADMIN_CLEAR_LIST: "CLEAR LIST",
-        ADMIN_PROPOSALS_LIVE: "Public Responses"
+        ADMIN_BTN_APPROVE: "Approve",
+        ADMIN_BTN_EDIT: "Edit",
+        ADMIN_BTN_KICK: "Kick",
+        ADMIN_PROMPT_RENAME: "What is the new name?",
+        ADMIN_PROMPT_KICK_REASON: "Reason for kicking?",
+        ADMIN_PROMPT_REFUSE_REASON: "Reason for refusal?",
+        ADMIN_PROPOSALS_LIVE: "Public Responses",
+        BTN_REFRESH: "Refresh",
+        ADMIN_NO_CONTROLS_FOR_SCENE: "The current scene ({{name}}) has no specific controls."
     }
 };
 
