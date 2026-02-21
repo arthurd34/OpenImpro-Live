@@ -29,23 +29,32 @@ const ProposalScene = ({ socket, name, gameState, history }) => {
                 </button>
             </div>
 
+            {history.length > 0 && (
             <div style={{ marginTop: '20px' }}>
-                <h4>Mes propositions: {history.length}/{maxProps}</h4>
+                <h4>
+                    {maxProps === 1
+                        ? "Ma proposition"
+                        : `Mes propositions : ${history.length} / ${maxProps}`
+                    }
+                </h4>
+
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    {history.map(h => (
-                        <div key={h.id} className="history-item" style={{
-                            padding: '8px',
-                            background: 'rgba(255,255,255,0.05)',
-                            borderRadius: '4px',
-                            borderLeft: h.isWinner ? '3px solid gold' : 'none',
-                            fontSize: '0.9rem'
-                        }}>
-                            {h.text} {h.isWinner && "🏆"}
-                            <small style={{ float: 'right', opacity: 0.5 }}>{h.timestamp}</small>
-                        </div>
+                    {
+                        history.map(h => (
+                            <div key={h.id} className="history-item" style={{
+                                padding: '8px',
+                                background: 'rgba(255,255,255,0.05)',
+                                borderRadius: '4px',
+                                borderLeft: h.isWinner ? '3px solid gold' : 'none',
+                                fontSize: '0.9rem'
+                            }}>
+                                <span>{h.text}</span> {h.isWinner && "🏆"}
+                                <small style={{ float: 'right', opacity: 0.5 }}>{h.timestamp}</small>
+                            </div>
                     ))}
                 </div>
             </div>
+            )}
         </div>
     );
 };

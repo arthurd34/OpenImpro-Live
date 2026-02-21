@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile.dev
     volumes:
       - ./backend:/app
-      - /app/node_modules # Avoids overwriting node_modules with the host's
+      - /app/node_modules
     env_file:
       - ./backend/.env
     ports:

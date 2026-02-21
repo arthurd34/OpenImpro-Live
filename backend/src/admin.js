@@ -1,14 +1,26 @@
+const sceneManager = require('./scenes');
+
 module.exports = {
     approveUser: (socket, io, data, context) => {
         const { socketId, welcomeMessage } = data;
-        const { pendingRequests, activeUsers, refreshAdminLists, getSyncData } = context;
+        const {
+            pendingRequests,
+            activeUsers,
+            refreshAdminLists,
+            getSyncData,
+            setActiveUsers,
+            setPendingRequests
+        } = context;
 
         const userReq = pendingRequests.find(r => r.socketId === socketId);
         if (userReq) {
-            //move to activeUsers
-            const index = pendingRequests.indexOf(userReq);
-            pendingRequests.splice(index, 1);
-            activeUsers.push(userReq);
+            // Remove from pending and add to active
+            const newPending = pendingRequests.filter(r => r.socketId !== socketId);
+            const newActive = [...activeUsers, { ...userReq, connected: true }];
+
+            // Using setters triggers persist() in server.js
+            setPendingRequests(newPending);
+            setActiveUsers(newActive);
 
             io.to(socketId).emit('status_update', {
                 status: 'approved',
@@ -33,31 +45,25 @@ module.exports = {
 
         const user = activeUsers.find(u => u.socketId === socketId);
 
-        // 1. Nettoyage des propositions si l'utilisateur existe
         if (user) {
-            const filteredProposals = allProposals.filter(a => a.userName !== user.name);
-            setAllProposals(filteredProposals);
-            io.to('admin_room').emit('admin_sync_proposals', filteredProposals);
+            // Scene cleanup (proposals, etc.) through sceneManager
+            sceneManager.cleanupUser(io, user, context);
         }
 
-        // 2. Notification au client
         io.to(socketId).emit('status_update', {
             status: isRefusal ? 'rejected' : 'kicked',
             reason: reason ? "Un administrateur a mis fin à votre session pour la raison suivante : " + reason : "Un administrateur a mis fin à votre session."
         });
 
-        // 3. Mise à jour des listes globales via les setters
+        // Filter lists and trigger persistence via setters
         const newActiveList = activeUsers.filter(u => u.socketId !== socketId);
         const newPendingList = pendingRequests.filter(u => u.socketId !== socketId);
 
         setActiveUsers(newActiveList);
         setPendingRequests(newPendingList);
 
-
-        // On le rappelle après les setters
         refreshAdminLists();
 
-        // 5. Déconnexion
         setTimeout(() => {
             const target = io.sockets.sockets.get(socketId);
             if (target) target.disconnect();
@@ -66,11 +72,17 @@ module.exports = {
 
     renameUser: (socket, io, data, context) => {
         const { socketId, newName } = data;
-        const { activeUsers, refreshAdminLists } = context;
+        const { activeUsers, refreshAdminLists, setActiveUsers } = context;
 
         const user = activeUsers.find(u => u.socketId === socketId);
         if (user) {
-            user.name = newName;
+            // Update the name and trigger persistence
+            const newActive = activeUsers.map(u =>
+                u.socketId === socketId ? { ...u, name: newName } : u
+            );
+
+            setActiveUsers(newActive);
+
             io.to(socketId).emit('name_updated', newName);
             refreshAdminLists();
         }

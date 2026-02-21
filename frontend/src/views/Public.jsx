@@ -35,8 +35,13 @@ const PublicView = () => {
                 setMessage('');
             } else {
                 setMessage(data.reason || '');
-                if (data.status === 'session_expired' || data.status === 'kicked') {
+                if (['rejected', 'kicked', 'session_expired'].includes(data.status)) {
                     localStorage.removeItem('player_name');
+                    socket.disconnect();
+
+                    setTimeout(() => {
+                        socket.connect();
+                    }, 1000);
                 }
             }
         });
@@ -75,7 +80,6 @@ const PublicView = () => {
         );
     }
 
-    // Si approuvé, on affiche le header et la scène de jeu actuelle
     const sceneType = gameState?.currentScene?.type;
     const sceneProps = { socket, name, gameState, history };
 
