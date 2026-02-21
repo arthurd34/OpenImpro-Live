@@ -26,15 +26,20 @@ const PublicView = () => {
     const ui = gameState?.ui || {};
 
     useEffect(() => {
+        // --- Socket Connectivity Management ---
         const onConnect = () => {
             setIsConnected(true);
             setCountdown(15);
             if (timerRef.current) clearInterval(timerRef.current);
+
+            // Auto-reconnect with token if connection was lost
+            const token = localStorage.getItem('player_token');
+            if (token) socket.emit('join_request', { token, isReconnect: true });
         };
 
         const onDisconnect = () => {
             setIsConnected(false);
-            // Auto-refresh countdown logic
+            // Start countdown for auto-refresh on failure
             timerRef.current = setInterval(() => {
                 setCountdown(prev => {
                     if (prev <= 1) {
@@ -59,15 +64,26 @@ const PublicView = () => {
     useEffect(() => { nameRef.current = name; }, [name]);
 
     useEffect(() => {
+        // --- Session Recovery on Mount ---
+        const savedToken = localStorage.getItem('player_token');
         const savedName = localStorage.getItem('player_name');
-        if (savedName) {
-            setName(savedName);
+
+        if (savedToken) {
+            if (savedName) setName(savedName);
             setStatus('pending');
-            socket.emit('join_request', { name: savedName, isReconnect: true });
+            // Identify by token instead of name for security
+            socket.emit('join_request', { token: savedToken, isReconnect: true });
         }
 
+        // --- Server Status Updates ---
         socket.on('status_update', (data) => {
             setStatus(data.status);
+
+            // Save token if provided (happens on pending or approved)
+            if (data.token) {
+                localStorage.setItem('player_token', data.token);
+            }
+
             if (data.status === 'approved') {
                 const finalName = data.name || nameRef.current;
                 localStorage.setItem('player_name', finalName);
@@ -75,8 +91,10 @@ const PublicView = () => {
                 setMessage('');
             } else {
                 setMessage(data.reason || '');
+                // Cleanup on terminal states
                 if (['rejected', 'kicked', 'session_expired'].includes(data.status)) {
                     localStorage.removeItem('player_name');
+                    localStorage.removeItem('player_token');
                     socket.disconnect();
                     setTimeout(() => socket.connect(), 1000);
                 }
@@ -84,6 +102,7 @@ const PublicView = () => {
         });
 
         socket.on('sync_state', (state) => setGameState(state));
+
         socket.on('name_updated', (newName) => {
             setName(newName);
             localStorage.setItem('player_name', newName);
@@ -91,7 +110,12 @@ const PublicView = () => {
 
         socket.on('user_history_update', (userProposals) => setHistory(userProposals));
 
-        return () => socket.off();
+        return () => {
+            socket.off('status_update');
+            socket.off('sync_state');
+            socket.off('name_updated');
+            socket.off('user_history_update');
+        };
     }, []);
 
     const handleJoin = (e) => {
@@ -99,6 +123,7 @@ const PublicView = () => {
         if (!name.trim()) return;
         setMessage('');
         setStatus('pending');
+        // Initial request only sends the name
         socket.emit('join_request', { name: name.trim(), isReconnect: false });
     };
 
@@ -130,7 +155,7 @@ const PublicView = () => {
 
     // --- MAIN ROUTING ---
 
-    // 1. Connection phase
+    // 1. Connection phase (Login or Pending)
     if (status !== 'approved') {
         return (
             <ConnectionScene
@@ -145,7 +170,14 @@ const PublicView = () => {
     }
 
     const sceneType = gameState?.currentScene?.type;
-    const sceneProps = { socket, name, gameState, history };
+    // We pass the token in props if needed by sub-scenes (e.g. for secure voting)
+    const sceneProps = {
+        socket,
+        name,
+        gameState,
+        history,
+        token: localStorage.getItem('player_token')
+    };
 
     // 2. Gameplay phase
     return (
