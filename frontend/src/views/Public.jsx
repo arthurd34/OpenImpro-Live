@@ -14,8 +14,42 @@ const PublicView = () => {
     const [message, setMessage] = useState('');
     const [gameState, setGameState] = useState(null);
     const [history, setHistory] = useState([]);
+    const [isConnected, setIsConnected] = useState(socket.connected);
+    const [countdown, setCountdown] = useState(5);
 
+    const timerRef = useRef(null);
     const nameRef = useRef('');
+
+    useEffect(() => {
+        const onConnect = () => {
+            setIsConnected(true);
+            setCountdown(15);
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+
+        const onDisconnect = () => {
+            setIsConnected(false);
+            timerRef.current = setInterval(() => {
+                setCountdown(prev => {
+                    if (prev <= 1) {
+                        window.location.reload();
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        };
+
+        socket.on('connect', onConnect);
+        socket.on('disconnect', onDisconnect);
+
+        return () => {
+            socket.off('connect', onConnect);
+            socket.off('disconnect', onDisconnect);
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, []);
+
     useEffect(() => { nameRef.current = name; }, [name]);
 
     useEffect(() => {
@@ -83,8 +117,33 @@ const PublicView = () => {
     const sceneType = gameState?.currentScene?.type;
     const sceneProps = { socket, name, gameState, history };
 
+    const ConnectionErrorOverlay = () => (
+        <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(0,0,0,0.85)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            zIndex: 9999, textAlign: 'center', padding: '20px'
+        }}>
+            <div className="spinner"></div>
+            <h2 style={{ color: '#e74c3c' }}>Connexion perdue</h2>
+            <p>Nous tentons de vous reconnecter au spectacle...</p>
+            <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>
+                Actualisation automatique dans <strong>{countdown}s</strong>
+            </p>
+            <button
+                className="btn-primary"
+                style={{ marginTop: '20px' }}
+                onClick={() => window.location.reload()}
+            >
+                Actualiser maintenant
+            </button>
+        </div>
+    );
+
     return (
         <div className="card">
+            {!isConnected && <ConnectionErrorOverlay />}
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0 }}>{name}</h3>
                 <div className="status-dot" style={{ background: '#2ecc71', width: 10, height: 10, borderRadius: '50%' }}></div>

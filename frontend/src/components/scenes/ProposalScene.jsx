@@ -17,7 +17,7 @@ const ProposalScene = ({ socket, name, gameState, history }) => {
                 <input
                     value={proposal}
                     onChange={e => setProposal(e.target.value)}
-                    placeholder={history.length >= maxProps ? "Limite d'envois atteinte" : params.theme}
+                    placeholder={history.length >= maxProps ? "Seulement "+ maxProps + " proposition(s) autorisée(s)" : "Entrez votre proposition..."}
                     disabled={history.length >= maxProps}
                 />
                 <button
