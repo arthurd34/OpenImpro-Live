@@ -6,6 +6,7 @@ const { Server } = require('socket.io');
 const dbManager = require('./db');
 const sceneManager = require('./scenes');
 const adminManager = require('./admin');
+const translations = require("./i18n");
 
 const app = express();
 const server = http.createServer(app);
@@ -24,6 +25,7 @@ let state = savedState || {
 const persist = () => dbManager.saveState(state);
 
 const showConfig = {
+    lang: "fr", // Default language
     scenes: [
         { id: 'CONNECTION', title: "Connexion", type: "CONNECT", params: { url: "http://url.lol" } },
         { id: 'WAITING', title: "Logo / Waiting", type: "WAITING", params: { titleDisplay: "Attente..."} },
@@ -33,10 +35,17 @@ const showConfig = {
 };
 
 // --- HELPERS ---
+
+/**
+ * Prepares the synchronization data sent to all clients
+ * Includes current scene, playlist and UI translations
+ */
 const getSyncData = () => ({
     currentScene: showConfig.scenes[state.currentSceneIndex],
     currentIndex: state.currentSceneIndex,
-    playlist: showConfig.scenes
+    playlist: showConfig.scenes,
+    // Ensure we fallback to 'fr' if language in config is missing
+    ui: translations[showConfig.lang] || translations['fr']
 });
 
 const refreshAdminLists = () => {
@@ -49,13 +58,15 @@ const getContext = () => ({
     ...state,
     refreshAdminLists,
     getSyncData,
-    // State setters to ensure persistence when modified from external managers
     setAllProposals: (val) => { state.allProposals = val; persist(); },
     setActiveUsers: (val) => { state.activeUsers = val; persist(); },
     setPendingRequests: (val) => { state.pendingRequests = val; persist(); }
 });
 
 io.on('connection', (socket) => {
+    // --- CRITICAL FIX: Send state immediately on connection ---
+    // This prevents "white screen" on frontend by providing translations right away
+    socket.emit('sync_state', getSyncData());
 
     socket.on('admin_toggle_joins', (value) => {
         state.allowNewJoins = value;
@@ -82,6 +93,7 @@ io.on('connection', (socket) => {
     socket.on('admin_set_scene', (index) => {
         state.currentSceneIndex = index;
         persist();
+        // Broadcast new scene state to everyone
         io.emit('sync_state', getSyncData());
     });
 
@@ -96,6 +108,7 @@ io.on('connection', (socket) => {
         const nameLower = data.name.trim().toLowerCase();
         const existingUser = state.activeUsers.find(u => u.name.toLowerCase() === nameLower);
 
+        // Handle Reconnection
         if (data.isReconnect) {
             if (existingUser) {
                 existingUser.socketId = socket.id;
@@ -106,26 +119,30 @@ io.on('connection', (socket) => {
                 socket.emit('user_history_update', existingUser.proposals || []);
                 refreshAdminLists();
             } else {
-                socket.emit('status_update', { status: 'session_expired', reason: "Session expired." });
+                // Return i18n key instead of raw text
+                socket.emit('status_update', { status: 'session_expired', reason: "ERROR_SESSION_EXPIRED" });
             }
             return;
         }
 
+        // Check if joins are allowed
         if (!state.allowNewJoins) {
             return socket.emit('status_update', {
                 status: 'rejected',
-                reason: "Les inscriptions sont actuellement fermées. Veuillez réessayer plus tard."
+                reason: "ERROR_JOINS_CLOSED"
             });
         }
 
+        // Check if name is taken
         const isAlreadyPending = state.pendingRequests.find(u => u.name.toLowerCase() === nameLower);
         if (existingUser || isAlreadyPending) {
             return socket.emit('status_update', {
                 status: 'rejected',
-                reason: `Le nom "${data.name}" est déjà pris.`
+                reason: "ERROR_NAME_TAKEN"
             });
         }
 
+        // Create pending request
         const req = { socketId: socket.id, name: data.name, connected: true, proposals: [] };
         state.pendingRequests.push(req);
         persist();

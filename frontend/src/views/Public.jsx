@@ -1,7 +1,9 @@
+// src/views/PublicView.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
+import { t } from '../utils/i18n';
 
-// Imports des composants de scènes
+// Scene Components Imports
 import ConnectionScene from '../components/scenes/ConnectionScene';
 import ProposalScene from '../components/scenes/ProposalScene';
 import WaitingScene from '../components/scenes/WaitingScene';
@@ -15,10 +17,13 @@ const PublicView = () => {
     const [gameState, setGameState] = useState(null);
     const [history, setHistory] = useState([]);
     const [isConnected, setIsConnected] = useState(socket.connected);
-    const [countdown, setCountdown] = useState(5);
+    const [countdown, setCountdown] = useState(15);
 
     const timerRef = useRef(null);
     const nameRef = useRef('');
+
+    // --- Translation Helper Context ---
+    const ui = gameState?.ui || {};
 
     useEffect(() => {
         const onConnect = () => {
@@ -29,6 +34,7 @@ const PublicView = () => {
 
         const onDisconnect = () => {
             setIsConnected(false);
+            // Auto-refresh countdown logic
             timerRef.current = setInterval(() => {
                 setCountdown(prev => {
                     if (prev <= 1) {
@@ -72,10 +78,7 @@ const PublicView = () => {
                 if (['rejected', 'kicked', 'session_expired'].includes(data.status)) {
                     localStorage.removeItem('player_name');
                     socket.disconnect();
-
-                    setTimeout(() => {
-                        socket.connect();
-                    }, 1000);
+                    setTimeout(() => socket.connect(), 1000);
                 }
             }
         });
@@ -99,23 +102,7 @@ const PublicView = () => {
         socket.emit('join_request', { name: name.trim(), isReconnect: false });
     };
 
-    // --- ROUTAGE PRINCIPAL ---
-
-    // Si l'utilisateur n'est pas encore approuvé, on affiche la scène de connexion
-    if (status !== 'approved') {
-        return (
-            <ConnectionScene
-                name={name}
-                setName={setName}
-                handleJoin={handleJoin}
-                status={status}
-                message={message}
-            />
-        );
-    }
-
-    const sceneType = gameState?.currentScene?.type;
-    const sceneProps = { socket, name, gameState, history };
+    // --- UI COMPONENTS ---
 
     const ConnectionErrorOverlay = () => (
         <div style={{
@@ -126,27 +113,51 @@ const PublicView = () => {
             zIndex: 9999, textAlign: 'center', padding: '20px'
         }}>
             <div className="spinner"></div>
-            <h2 style={{ color: '#e74c3c' }}>Connexion perdue</h2>
-            <p>Nous tentons de vous reconnecter au spectacle...</p>
+            <h2 style={{ color: '#e74c3c' }}>{t(ui, 'CONNECTION_LOST')}</h2>
+            <p>{t(ui, 'RECONNECTING')}</p>
             <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                Actualisation automatique dans <strong>{countdown}s</strong>
+                {t(ui, 'REFRESH_IN')} <strong>{countdown}s</strong>
             </p>
             <button
                 className="btn-primary"
                 style={{ marginTop: '20px' }}
                 onClick={() => window.location.reload()}
             >
-                Actualiser maintenant
+                {t(ui, 'REFRESH_NOW')}
             </button>
         </div>
     );
 
+    // --- MAIN ROUTING ---
+
+    // 1. Connection phase
+    if (status !== 'approved') {
+        return (
+            <ConnectionScene
+                name={name}
+                setName={setName}
+                handleJoin={handleJoin}
+                status={status}
+                message={message}
+                ui={ui}
+            />
+        );
+    }
+
+    const sceneType = gameState?.currentScene?.type;
+    const sceneProps = { socket, name, gameState, history };
+
+    // 2. Gameplay phase
     return (
         <div className="card">
             {!isConnected && <ConnectionErrorOverlay />}
+
             <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0 }}>{name}</h3>
-                <div className="status-dot" style={{ background: '#2ecc71', width: 10, height: 10, borderRadius: '50%' }}></div>
+                <div className="status-dot" style={{
+                    background: isConnected ? '#2ecc71' : '#e74c3c',
+                    width: 10, height: 10, borderRadius: '50%'
+                }}></div>
             </header>
             <hr />
 
@@ -154,7 +165,11 @@ const PublicView = () => {
                 switch (sceneType) {
                     case 'PROPOSAL': return <ProposalScene {...sceneProps} />;
                     case 'WAITING':  return <WaitingScene {...sceneProps} />;
-                    default: return <div style={{textAlign:'center', padding:'20px'}}>Connecté ! Attente du début...</div>;
+                    default: return (
+                        <div style={{textAlign:'center', padding:'20px'}}>
+                            {t(ui, 'WAITING_FOR_START')}
+                        </div>
+                    );
                 }
             })()}
         </div>
