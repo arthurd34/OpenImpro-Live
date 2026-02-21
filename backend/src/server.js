@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const crypto = require('crypto');
 
 const dbManager = require('./db');
 const sceneManager = require('./scenes');
@@ -19,13 +20,17 @@ let state = savedState || {
     activeUsers: [],
     pendingRequests: [],
     allProposals: [],
+    adminTokens: [], // Persistent storage for admin sessions
     allowNewJoins: true
 };
+
+// If state was loaded but missing adminTokens array, initialize it
+if (!state.adminTokens) state.adminTokens = [];
 
 const persist = () => dbManager.saveState(state);
 
 const showConfig = {
-    lang: "fr", // Default language
+    lang: "fr", // Global language setting
     scenes: [
         { id: 'CONNECTION', title: "Connexion", type: "CONNECT", params: { url: "http://url.lol" } },
         { id: 'WAITING', title: "Logo / Waiting", type: "WAITING", params: { titleDisplay: "Attente..."} },
@@ -37,22 +42,33 @@ const showConfig = {
 // --- HELPERS ---
 
 /**
- * Prepares the synchronization data sent to all clients
- * Includes current scene, playlist and UI translations
+ * Checks if a token exists in the persistent admin tokens list
+ * @param {string} token
+ * @returns {boolean}
+ */
+const isValidAdmin = (token) => state.adminTokens && state.adminTokens.includes(token);
+
+/**
+ * Prepares the synchronization data for clients
  */
 const getSyncData = () => ({
     currentScene: showConfig.scenes[state.currentSceneIndex],
     currentIndex: state.currentSceneIndex,
     playlist: showConfig.scenes,
-    // Ensure we fallback to 'fr' if language in config is missing
-    ui: translations[showConfig.lang] || translations['en,']
+    ui: translations[showConfig.lang] || translations['en']
 });
 
+/**
+ * Updates admin room with latest user and request lists
+ */
 const refreshAdminLists = () => {
     io.to('admin_room').emit('admin_user_list', state.activeUsers);
     io.to('admin_room').emit('admin_pending_list', state.pendingRequests);
 };
 
+/**
+ * Context object shared with managers
+ */
 const getContext = () => ({
     currentScene: showConfig.scenes[state.currentSceneIndex],
     ...state,
@@ -63,39 +79,74 @@ const getContext = () => ({
     setPendingRequests: (val) => { state.pendingRequests = val; persist(); }
 });
 
+/**
+ * Middleware wrapper to verify admin token against persistent state
+ */
+const adminAction = (callback) => (data) => {
+    if (data && data.token && isValidAdmin(data.token)) {
+        callback(data);
+    } else {
+        console.warn("Unauthorized admin action attempt blocked.");
+    }
+};
+
 io.on('connection', (socket) => {
-    // --- CRITICAL FIX: Send state immediately on connection ---
-    // This prevents "white screen" on frontend by providing translations right away
+    // Send initial state immediately for UI translations
     socket.emit('sync_state', getSyncData());
 
-    socket.on('admin_toggle_joins', (value) => {
-        state.allowNewJoins = value;
-        persist();
-        io.to('admin_room').emit('admin_joins_status', state.allowNewJoins);
-    });
+    // --- ADMIN AUTHENTICATION ---
+    socket.on('admin_login', (data) => {
+        const { password, token } = (typeof data === 'string') ? { password: data } : data;
 
-    socket.on('admin_login', (password) => {
-        if (password === process.env.ADMIN_PASSWORD) {
+        // Login via password (initial)
+        if (password && password === process.env.ADMIN_PASSWORD) {
+            const newToken = crypto.randomBytes(32).toString('hex');
+
+            // Persist token in state
+            state.adminTokens.push(newToken);
+            // Optional: Limit number of stored tokens to 50 to keep DB clean
+            if (state.adminTokens.length > 50) state.adminTokens.shift();
+            persist();
+
             socket.join('admin_room');
-            socket.emit('login_success');
+            socket.emit('login_success', { token: newToken });
             socket.emit('sync_state', getSyncData());
             refreshAdminLists();
             socket.emit('admin_sync_proposals', state.allProposals);
             socket.emit('admin_joins_status', state.allowNewJoins);
+            return;
         }
+
+        // Login via token (reconnection/remember me) from DB
+        if (token && isValidAdmin(token)) {
+            socket.join('admin_room');
+            socket.emit('login_success', { token });
+            socket.emit('sync_state', getSyncData());
+            refreshAdminLists();
+            socket.emit('admin_sync_proposals', state.allProposals);
+            socket.emit('admin_joins_status', state.allowNewJoins);
+            return;
+        }
+
+        socket.emit('login_error', 'Invalid credentials');
     });
 
-    // --- ADMIN ACTIONS ---
-    socket.on('admin_approve_user', (data) => adminManager.approveUser(socket, io, data, getContext()));
-    socket.on('admin_kick_user', (data) => adminManager.kickUser(socket, io, data, getContext()));
-    socket.on('admin_rename_user', (data) => adminManager.renameUser(socket, io, data, getContext()));
-
-    socket.on('admin_set_scene', (index) => {
-        state.currentSceneIndex = index;
+    // --- PROTECTED ADMIN ACTIONS ---
+    socket.on('admin_toggle_joins', adminAction((data) => {
+        state.allowNewJoins = data.value;
         persist();
-        // Broadcast new scene state to everyone
+        io.to('admin_room').emit('admin_joins_status', state.allowNewJoins);
+    }));
+
+    socket.on('admin_approve_user', adminAction((data) => adminManager.approveUser(socket, io, data, getContext())));
+    socket.on('admin_kick_user', adminAction((data) => adminManager.kickUser(socket, io, data, getContext())));
+    socket.on('admin_rename_user', adminAction((data) => adminManager.renameUser(socket, io, data, getContext())));
+
+    socket.on('admin_set_scene', adminAction((data) => {
+        state.currentSceneIndex = data.index;
+        persist();
         io.emit('sync_state', getSyncData());
-    });
+    }));
 
     // --- SCENE EVENTS (DELEGATED) ---
     const sceneEvents = ['send_proposal', 'admin_approve_proposal', 'admin_delete_proposal', 'admin_clear_all_proposals'];
@@ -103,12 +154,11 @@ io.on('connection', (socket) => {
         socket.on(event, (data) => sceneManager.handleEvent(socket, io, event, data, getContext()));
     });
 
-    // --- JOIN & RECONNECT LOGIC ---
+    // --- PUBLIC JOIN & RECONNECT LOGIC ---
     socket.on('join_request', (data) => {
         const nameLower = data.name.trim().toLowerCase();
         const existingUser = state.activeUsers.find(u => u.name.toLowerCase() === nameLower);
 
-        // Handle Reconnection
         if (data.isReconnect) {
             if (existingUser) {
                 existingUser.socketId = socket.id;
@@ -119,30 +169,20 @@ io.on('connection', (socket) => {
                 socket.emit('user_history_update', existingUser.proposals || []);
                 refreshAdminLists();
             } else {
-                // Return i18n key instead of raw text
                 socket.emit('status_update', { status: 'session_expired', reason: "ERROR_SESSION_EXPIRED" });
             }
             return;
         }
 
-        // Check if joins are allowed
         if (!state.allowNewJoins) {
-            return socket.emit('status_update', {
-                status: 'rejected',
-                reason: "ERROR_JOINS_CLOSED"
-            });
+            return socket.emit('status_update', { status: 'rejected', reason: "ERROR_JOINS_CLOSED" });
         }
 
-        // Check if name is taken
         const isAlreadyPending = state.pendingRequests.find(u => u.name.toLowerCase() === nameLower);
         if (existingUser || isAlreadyPending) {
-            return socket.emit('status_update', {
-                status: 'rejected',
-                reason: "ERROR_NAME_TAKEN"
-            });
+            return socket.emit('status_update', { status: 'rejected', reason: "ERROR_NAME_TAKEN" });
         }
 
-        // Create pending request
         const req = { socketId: socket.id, name: data.name, connected: true, proposals: [] };
         state.pendingRequests.push(req);
         persist();
