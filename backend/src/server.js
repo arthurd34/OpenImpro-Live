@@ -118,7 +118,7 @@ io.on('connection', (socket) => {
             socket.emit('admin_joins_status', state.allowNewJoins);
             return;
         }
-        socket.emit('login_error', 'Invalid credentials');
+        socket.emit('login_error', 'ERROR_INVALID_CREDENTIALS');
     });
 
     // --- PROTECTED ADMIN ACTIONS ---

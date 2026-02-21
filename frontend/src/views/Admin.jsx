@@ -110,12 +110,19 @@ const AdminView = () => {
                     placeholder={t(ui, 'ADMIN_INPUT_PASS_PH')}
                     onChange={e => setPass(e.target.value)}
                     autoFocus
-                    style={{width:'100%', marginBottom:'10px'}}
+                    className="admin-input"
                 />
 
-                <div style={{ marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    <input type="checkbox" id="rem" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
-                    <label htmlFor="rem" style={{fontSize:'0.9rem'}}>{t(ui, 'ADMIN_REMEMBER_ME')}</label>
+                <div className="remember-container">
+                    <span>{t(ui, 'ADMIN_REMEMBER_ME')}</span>
+                    <label className="switch">
+                        <input
+                            type="checkbox"
+                            checked={rememberMe}
+                            onChange={e => setRememberMe(e.target.checked)}
+                        />
+                        <span className="slider round"></span>
+                    </label>
                 </div>
 
                 <button className="btn-primary" style={{width:'100%'}} type="submit">

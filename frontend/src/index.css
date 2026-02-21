@@ -1,4 +1,6 @@
-/* Global Reset */
+/* ==========================================================================
+   1. VARIABLES & RESET
+   ========================================================================== */
 :root {
     --primary: #00d4ff;
     --secondary: #9d00ff;
@@ -7,6 +9,11 @@
     --bg-dark: #0f172a;
     --glass: rgba(255, 255, 255, 0.05);
     --glass-border: rgba(255, 255, 255, 0.1);
+    --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
 }
 
 body {
@@ -15,17 +22,21 @@ body {
     background-color: var(--bg-dark);
     background-image: radial-gradient(circle at top right, #1e1b4b, #0f172a);
     color: white;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--font-main);
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
+/* ==========================================================================
+   2. LAYOUT & CONTAINERS
+   ========================================================================== */
 .app-container {
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
+    animation: fadeIn 0.5s ease-out;
 }
 
-/* Glass Cards */
 .card {
     background: var(--glass);
     backdrop-filter: blur(10px);
@@ -34,32 +45,91 @@ body {
     padding: 20px;
     margin-bottom: 20px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    animation: fadeIn 0.3s ease-out;
 }
 
-/* Typography */
-h1, h2, h3 {
+/* ==========================================================================
+   3. TYPOGRAPHY
+   ========================================================================== */
+h1, h2, h3, h4 {
     margin-top: 0;
     letter-spacing: -0.02em;
+    font-weight: 700;
 }
 
-/* Buttons */
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--glass-border);
+    margin: 20px 0;
+}
+
+/* ==========================================================================
+   4. FORMS & INPUTS
+   ========================================================================== */
+input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 12px 15px;
+    color: white;
+    width: 100%;
+    margin-bottom: 15px;
+    display: block;
+    font-family: inherit;
+    transition: all 0.2s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.2);
+    background: rgba(0, 0, 0, 0.4);
+}
+
+input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+}
+
+/* ==========================================================================
+   5. BUTTONS
+   ========================================================================== */
 button {
     background: #334155;
     color: white;
     border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
+    padding: 10px 20px;
+    border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 button:hover {
     filter: brightness(1.2);
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(1);
 }
 
 button[type="submit"], .btn-primary {
     background: linear-gradient(45deg, var(--primary), var(--secondary));
+    color: white;
 }
 
 .btn-danger {
@@ -67,123 +137,172 @@ button[type="submit"], .btn-primary {
 }
 
 .btn-danger:hover {
-    background: #dc2626;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
 }
 
-/* Inputs */
-input {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--glass-border);
-    border-radius: 6px;
-    padding: 10px;
-    color: white;
-    width: 100%;
-    margin-bottom: 15px;
-    display: block;
+/* ==========================================================================
+   6. ADMIN COMPONENTS
+   ========================================================================== */
+
+/* Login Admin Specific */
+.remember-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 20px 0;
+    padding: 0 5px;
+    font-size: 0.9rem;
 }
 
-input:focus {
-    outline: 2px solid var(--primary);
-    border-color: transparent;
-}
-
-/* Admin Specific Layout */
+/* User List Rows */
 .user-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
+    padding: 12px;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 8px;
-    margin-bottom: 8px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid transparent;
+    transition: border 0.2s ease;
 }
 
+.user-row:hover {
+    border-color: var(--glass-border);
+}
+
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+/* Grid System */
 .admin-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
 }
 
-@media (max-width: 768px) {
-    .admin-grid {
-        grid-template-columns: 1fr;
-    }
+/* ==========================================================================
+   7. INTERACTIVE ELEMENTS (TOGGLES, SPINNERS)
+   ========================================================================== */
+
+/* Modern Toggle Switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
 }
 
-/* Animations */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.switch input { opacity: 0; width: 0; height: 0; margin: 0; }
+
+.slider {
+    position: absolute; cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #475569;
+    transition: .3s; border-radius: 24px;
 }
 
-.card {
-    animation: fadeIn 0.3s ease-out;
+.slider:before {
+    position: absolute; content: "";
+    height: 18px; width: 18px; left: 3px; bottom: 3px;
+    background-color: white; transition: .3s; border-radius: 50%;
 }
 
-/* Animations for the Screen View */
-@keyframes zoomIn {
-    from { opacity: 0; transform: scale(0.5); }
-    to { opacity: 1; transform: scale(1); }
-}
+input:checked + .slider { background-color: var(--success); }
+input:checked + .slider:before { transform: translateX(20px); }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-.winner-card {
-    animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.user-row {
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-/* Spinner Animation */
+/* Loading Spinner */
 .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid var(--glass);
+    border: 4px solid rgba(255, 255, 255, 0.1);
     border-top: 4px solid var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 20px auto;
 }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
+/* Error Messages */
 .error-box {
     background: rgba(239, 68, 68, 0.15);
     border-left: 4px solid var(--danger);
-    color: #ff8080;
+    color: #fca5a5;
     padding: 15px;
-    border-radius: 4px;
+    border-radius: 6px;
     margin-top: 15px;
     text-align: left;
+    font-size: 0.9rem;
     animation: fadeIn 0.3s ease;
 }
 
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 40px;
-    height: 20px;
+/* Connection Banner */
+.connexion-error-banner {
+    background: var(--danger);
+    color: white;
+    padding: 12px;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
 }
-.switch input { opacity: 0; width: 0; height: 0; }
-.slider {
-    position: absolute; cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-color: #64748b;
-    transition: .4s; border-radius: 20px;
+
+/* ==========================================================================
+   8. ANIMATIONS
+   ========================================================================== */
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
-.slider:before {
-    position: absolute; content: "";
-    height: 14px; width: 14px; left: 3px; bottom: 3px;
-    background-color: white; transition: .4s; border-radius: 50%;
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
-input:checked + .slider { background-color: #22c55e; }
-input:checked + .slider:before { transform: translateX(20px); }
+
+@keyframes zoomIn {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.winner-card {
+    animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* ==========================================================================
+   9. MEDIA QUERIES (RESPONSIVE)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .app-container {
+        padding: 15px;
+    }
+
+    h1 { font-size: 1.5rem; }
+
+    .user-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .user-row div {
+        width: 100%;
+        display: flex;
+        gap: 5px;
+    }
+
+    .user-row button {
+        flex: 1;
+    }
+}

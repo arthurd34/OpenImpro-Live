@@ -34,6 +34,7 @@ const translations = {
         ERROR_JOINS_CLOSED: "Les inscriptions sont fermées.",
 
         // --- ADMIN PANEL ---
+        ERROR_INVALID_CREDENTIALS: "Identifiants invalides.",
         ADMIN_LOGIN_TITLE: "Accès Régie",
         ADMIN_INPUT_PASS_PH: "Mot de passe",
         ADMIN_REMEMBER_ME: "Se souvenir de moi",
@@ -89,6 +90,7 @@ const translations = {
         ERROR_JOINS_CLOSED: "Registrations are closed.",
 
         // --- ADMIN PANEL ---
+        ERROR_INVALID_CREDENTIALS: "Invalid credentials.",
         ADMIN_LOGIN_TITLE: "Control Room Access",
         ADMIN_INPUT_PASS_PH: "Password",
         ADMIN_REMEMBER_ME: "Remember me",
