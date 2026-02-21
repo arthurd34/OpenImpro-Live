@@ -45,7 +45,7 @@ const getSyncData = () => ({
     currentIndex: state.currentSceneIndex,
     playlist: showConfig.scenes,
     // Ensure we fallback to 'fr' if language in config is missing
-    ui: translations[showConfig.lang] || translations['fr']
+    ui: translations[showConfig.lang] || translations['en,']
 });
 
 const refreshAdminLists = () => {
