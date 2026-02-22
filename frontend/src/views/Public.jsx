@@ -1,20 +1,21 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import io from 'socket.io-client';
 import { t } from '../utils/i18n';
 
-// Components Imports
+// Components
 import ConnectionScene from '../components/scenes/ConnectionScene';
 import ProposalScene from '../components/scenes/ProposalScene';
 import WaitingScene from '../components/scenes/WaitingScene';
 import Footer from '../components/Footer';
+import ConnectionErrorOverlay from '../components/overlays/ConnectionErrorOverlay';
 
 const socketUrl = import.meta.env.VITE_BACKEND_URL;
-const socket = io(socketUrl, {
-    transports: ["websocket"],
-});
+const socket = io(socketUrl, { transports: ["websocket"] });
 
 const PublicView = () => {
+    // --- STATES ---
     const [name, setName] = useState('');
+    const [entryCode, setEntryCode] = useState(''); // New: Access code state
     const [status, setStatus] = useState('idle');
     const [message, setMessage] = useState('');
     const [gameState, setGameState] = useState(null);
@@ -24,12 +25,20 @@ const PublicView = () => {
 
     const timerRef = useRef(null);
     const nameRef = useRef('');
-
-    // --- Translation Helper Context ---
     const ui = gameState?.ui || {};
 
+    // --- EFFECT: URL CODE PARSING ---
     useEffect(() => {
-        // --- Socket Connectivity Management ---
+        // Automatically grab the 'code' parameter from the URL if it exists
+        const params = new URLSearchParams(window.location.search);
+        const codeFromUrl = params.get('code');
+        if (codeFromUrl) {
+            setEntryCode(codeFromUrl.toUpperCase());
+        }
+    }, []);
+
+    // --- EFFECT: SOCKET CONNECTIVITY ---
+    useEffect(() => {
         const onConnect = () => {
             setIsConnected(true);
             setCountdown(15);
@@ -42,10 +51,7 @@ const PublicView = () => {
             setIsConnected(false);
             timerRef.current = setInterval(() => {
                 setCountdown(prev => {
-                    if (prev <= 1) {
-                        window.location.reload();
-                        return 0;
-                    }
+                    if (prev <= 1) { window.location.reload(); return 0; }
                     return prev - 1;
                 });
             }, 1000);
@@ -53,7 +59,6 @@ const PublicView = () => {
 
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
-
         return () => {
             socket.off('connect', onConnect);
             socket.off('disconnect', onDisconnect);
@@ -63,8 +68,8 @@ const PublicView = () => {
 
     useEffect(() => { nameRef.current = name; }, [name]);
 
+    // --- EFFECT: GAME EVENTS ---
     useEffect(() => {
-        // --- Session Recovery on Mount ---
         const savedToken = localStorage.getItem('player_token');
         const savedName = localStorage.getItem('player_name');
 
@@ -74,7 +79,6 @@ const PublicView = () => {
             socket.emit('join_request', { token: savedToken, isReconnect: true });
         }
 
-        // --- Server Event Listeners ---
         socket.on('status_update', (data) => {
             setStatus(data.status);
             if (data.token) localStorage.setItem('player_token', data.token);
@@ -86,6 +90,7 @@ const PublicView = () => {
                 setMessage('');
             } else {
                 setMessage(data.reason || '');
+                // Handle various disconnection reasons
                 if (['rejected', 'kicked', 'session_expired'].includes(data.status)) {
                     localStorage.removeItem('player_name');
                     localStorage.removeItem('player_token');
@@ -95,12 +100,12 @@ const PublicView = () => {
             }
         });
 
-        socket.on('sync_state', (state) => setGameState(state));
+        socket.on('sync_state', setGameState);
         socket.on('name_updated', (newName) => {
             setName(newName);
             localStorage.setItem('player_name', newName);
         });
-        socket.on('user_history_update', (userProposals) => setHistory(userProposals));
+        socket.on('user_history_update', setHistory);
 
         return () => {
             socket.off('status_update');
@@ -110,37 +115,23 @@ const PublicView = () => {
         };
     }, []);
 
+    // --- HANDLER: JOIN SHOW ---
     const handleJoin = (e) => {
         if (e) e.preventDefault();
         if (!name.trim()) return;
+
         setMessage('');
         setStatus('pending');
-        socket.emit('join_request', { name: name.trim(), isReconnect: false });
+
+        // Emitting the name AND the access code (from input or URL)
+        socket.emit('join_request', {
+            name: name.trim(),
+            entryCode: entryCode.trim().toUpperCase(), // Send access code
+            isReconnect: false
+        });
     };
 
-    const ConnectionErrorOverlay = () => (
-        <div style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            zIndex: 9999, textAlign: 'center', padding: '20px'
-        }}>
-            <div className="spinner"></div>
-            <h2 style={{ color: '#e74c3c' }}>{t(ui, 'CONNECTION_LOST')}</h2>
-            <p>{t(ui, 'RECONNECTING')}</p>
-            <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>
-                {t(ui, 'REFRESH_IN')} <strong>{countdown}s</strong>
-            </p>
-            <button className="btn-primary" style={{ marginTop: '20px' }} onClick={() => window.location.reload()}>
-                {t(ui, 'REFRESH_NOW')}
-            </button>
-        </div>
-    );
-
-    // --- MAIN ROUTING LOGIC ---
-
-    // 1. Connection Phase (Login or awaiting approval)
+    // --- RENDER: LOGIN / PENDING ---
     if (status !== 'approved') {
         return (
             <div className="app-container">
@@ -148,6 +139,8 @@ const PublicView = () => {
                     <ConnectionScene
                         name={name}
                         setName={setName}
+                        entryCode={entryCode} // Pass to input
+                        setEntryCode={setEntryCode} // Pass to input
                         handleJoin={handleJoin}
                         status={status}
                         message={message}
@@ -160,7 +153,7 @@ const PublicView = () => {
         );
     }
 
-    // 2. LIVE Security Check for already logged-in users
+    // --- RENDER: SHOW NOT STARTED (SECURITY) ---
     if (gameState && gameState.isLive === false) {
         return (
             <div className="app-container">
@@ -179,19 +172,22 @@ const PublicView = () => {
         );
     }
 
+    // --- RENDER: ACTIVE SHOW ---
     const sceneType = gameState?.currentScene?.type;
     const sceneProps = {
-        socket,
-        name,
-        gameState,
-        history,
+        socket, name, gameState, history,
         token: localStorage.getItem('player_token')
     };
 
-    // 3. Main Gameplay Phase
     return (
         <div className="app-container">
-            {!isConnected && <ConnectionErrorOverlay />}
+            {!isConnected && (
+                <ConnectionErrorOverlay
+                    ui={ui}
+                    countdown={countdown}
+                    onRefresh={() => window.location.reload()}
+                />
+            )}
 
             <div className="main-content">
                 <div className="card">

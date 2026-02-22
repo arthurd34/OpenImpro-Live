@@ -1,7 +1,17 @@
 import React from 'react';
 import { t } from '../../utils/i18n';
 
-const ConnectionScene = ({ name, setName, handleJoin, status, message, ui, isLive }) => {
+const ConnectionScene = ({
+                             name,
+                             setName,
+                             entryCode,     // New prop
+                             setEntryCode,  // New prop
+                             handleJoin,
+                             status,
+                             message,
+                             ui,
+                             isLive
+                         }) => {
 
     // --- CASE 1: Show is NOT LIVE yet (Welcome message only) ---
     if (isLive === false) {
@@ -34,17 +44,42 @@ const ConnectionScene = ({ name, setName, handleJoin, status, message, ui, isLiv
         <div className="card">
             <h2>{t(ui, 'CONN_JOIN_TITLE')}</h2>
             <form onSubmit={handleJoin}>
+                {/* Player Name Input */}
                 <input
+                    type="text"
                     placeholder={t(ui, 'CONN_INPUT_PLACEHOLDER')}
                     value={name}
                     onChange={e => setName(e.target.value)}
                     autoFocus
+                    required
                 />
+
+                {/* Session Access Code Input */}
+                <div style={{ marginTop: '15px' }}>
+                    <label style={{ fontSize: '0.8rem', opacity: 0.7, display: 'block', marginBottom: '5px' }}>
+                        {t(ui, 'ADMIN_PUBLIC_KEY_LABEL') || 'Code'}
+                    </label>
+                    <input
+                        type="text"
+                        placeholder="XXXX"
+                        maxLength="4"
+                        value={entryCode}
+                        onChange={e => setEntryCode(e.target.value.toUpperCase())}
+                        style={{
+                            textAlign: 'center',
+                            letterSpacing: '5px',
+                            fontWeight: 'bold',
+                            fontSize: '1.2rem',
+                            textTransform: 'uppercase'
+                        }}
+                    />
+                </div>
+
                 <button
                     type="submit"
                     className="btn-primary"
-                    style={{ width: '100%', marginTop: '10px' }}
-                    disabled={!name.trim()}
+                    style={{ width: '100%', marginTop: '20px' }}
+                    disabled={!name.trim() || !entryCode.trim()}
                 >
                     {t(ui, 'CONN_BTN_JOIN')}
                 </button>
@@ -52,7 +87,7 @@ const ConnectionScene = ({ name, setName, handleJoin, status, message, ui, isLiv
 
             {message && (
                 <div className="error-box" style={{ marginTop: '15px' }}>
-                    {t(ui, message)}
+                    {t(ui, message) || message}
                 </div>
             )}
         </div>
