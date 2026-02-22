@@ -32,6 +32,10 @@ const AdminView = () => {
 
     const ui = state?.ui || {};
 
+    setInterval(() => {
+        console.log(socketUrl);
+    }, 1000);
+
     // --- SECURE EMIT HELPER ---
     const emitAdmin = useCallback((event, data = {}) => {
         socket.emit(event, { ...data, token });
@@ -81,8 +85,6 @@ const AdminView = () => {
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
 
-
-        console.log(`URL IS : ${import.meta.env.VITE_BACKEND_URL}`);
         return () => {
             socket.off('login_success');
             socket.off('login_error');
