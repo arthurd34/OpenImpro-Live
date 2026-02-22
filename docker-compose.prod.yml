@@ -1,4 +1,4 @@
-version: '3.8'
+ersion: '3.8'
 
 services:
   backend:
@@ -8,10 +8,13 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SECRET_TOKEN=${SECRET_TOKEN}
+      - CORS_ORIGIN=${CORS_ORIGIN}
     ports:
       - "3000:3000"
     volumes:
-      - openimpro_data:/app/db.json
+      - openimpro_data:/app/database
       - openimpro_shows:/app/shows
 
   frontend:

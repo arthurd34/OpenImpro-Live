@@ -1,7 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const dbPath = path.resolve(__dirname, '../openimpro.db');
+const dbPath = process.env.NODE_ENV === 'production'
+    ? '/app/database/openimpro.db'
+    : path.resolve(__dirname, '../openimpro.db');
 
 const options = process.env.NODE_ENV !== 'production'
     ? { verbose: console.log }
