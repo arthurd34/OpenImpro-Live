@@ -4,7 +4,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 ARG VITE_BACKEND_URL
-ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
+ENV VITE_BACKEND_URL="http://arthur.deleage-family.ovh:3000"
 COPY package.json yarn.lock* ./
 RUN yarn install --frozen-lockfile
 COPY . .
