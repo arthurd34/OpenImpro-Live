@@ -1,16 +1,9 @@
-version: '3.8'
-
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: always
-    environment:
-      - NODE_ENV=production
-      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
-      - SECRET_TOKEN=${SECRET_TOKEN}
-      - CORS_ORIGIN=${CORS_ORIGIN}
     ports:
       - "3000:3000"
     volumes:

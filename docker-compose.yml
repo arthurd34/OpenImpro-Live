@@ -2,7 +2,11 @@ services:
   backend:
     build:
       context: ./backend
-    # We define volumes for persistence in both modes
+    environment:
+      - NODE_ENV=production
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - SECRET_TOKEN=${SECRET_TOKEN}
+      - CORS_ORIGIN=${CORS_ORIGIN}
     volumes:
       - ./backend/shows:/app/shows
       - ./backend/db.json:/app/db.json
@@ -10,5 +14,7 @@ services:
   frontend:
     build:
       context: ./frontend
+    environment:
+      - VITE_BACKEND_URL=${VITE_BACKEND_URL}
     depends_on:
       - backend
