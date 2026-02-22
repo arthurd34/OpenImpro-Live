@@ -4,7 +4,7 @@ const translations = {
     fr: {
         // --- CONNECTION SCENE ---
         CONN_WELCOME_TITLE: "Bienvenue !",
-        CONN_NOT_STARTED_MSG: "Le spectacle va bientôt commencer. Préparez-vous, les connexions ouvriront d'un instant à l'autre !",
+        CONN_NOT_STARTED_MSG: "Aucun spectacle en cours pour le moment. Restez à l'écoute, les connexions peuvent ouvrir d'un instant à l'autre !",
         CONN_JOIN_TITLE: "Rejoindre le spectacle",
         CONN_INPUT_PLACEHOLDER: "Votre Nom, équipe ou n° de table",
         CONN_BTN_JOIN: "Rejoindre",
@@ -85,7 +85,7 @@ const translations = {
     en: {
         // --- CONNECTION SCENE ---
         CONN_WELCOME_TITLE: "Welcome!",
-        CONN_NOT_STARTED_MSG: "The show is about to start. Get ready, connections will open at any moment!",
+        CONN_NOT_STARTED_MSG: "No show currently running. Stay tuned, connections may open any moment now!",
         CONN_JOIN_TITLE: "Join the show",
         CONN_INPUT_PLACEHOLDER: "Your Name, team or table number",
         CONN_BTN_JOIN: "Join",
