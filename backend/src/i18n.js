@@ -75,7 +75,12 @@ const translations = {
         ADMIN_UPLOAD_SUCCESS: "Importation réussie !",
         ADMIN_UPLOAD_ERROR: "Erreur lors de l'importation.",
         ADMIN_CONFIRM_DELETE: "Supprimer définitivement ce spectacle ?",
-        ADMIN_NO_SHOW_LOADED: "Aucun spectacle chargé. Veuillez charger un spectacle."
+        ADMIN_NO_SHOW_LOADED: "Aucun spectacle chargé. Veuillez charger un spectacle.",
+
+        // --- FOOTER ---
+        MAKE_BY: "Conçu et développé par",
+        FOOTER_SUPPORT_CONTACT: "Support & Contact",
+        FOOTER_ALL_RIGHTS: "Tous droits réservés",
     },
     en: {
         // --- CONNECTION SCENE ---
@@ -151,7 +156,12 @@ const translations = {
         ADMIN_UPLOAD_SUCCESS: "Upload successful!",
         ADMIN_UPLOAD_ERROR: "Error during upload.",
         ADMIN_CONFIRM_DELETE: "Permanently delete this show?",
-        ADMIN_NO_SHOW_LOADED: "No show loaded. Please load a show."
+        ADMIN_NO_SHOW_LOADED: "No show loaded. Please load a show.",
+
+        // --- FOOTER ---
+        MAKE_BY: "Designed and developed by",
+        FOOTER_SUPPORT_CONTACT: "Support & Contact",
+        FOOTER_ALL_RIGHTS: "All rights reserved",
     }
 };
 

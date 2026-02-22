@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import io from 'socket.io-client';
 import SceneControl from '../components/admin/SceneControl';
 import { t } from '../utils/i18n';
+import Footer from "../components/Footer.jsx";
 
 // Connect to the backend socket
 const socket = io(`http://${window.location.hostname}:3000`);
@@ -343,6 +344,7 @@ const AdminView = () => {
                     ui={ui}
                 />
             </div>
+            <Footer version={state?.version} ui={ui} />
         </div>
     );
 };

@@ -3,37 +3,38 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const crypto = require('crypto');
-const fs = require('fs-extra'); // Using fs-extra for better promise support
+const fs = require('fs-extra');
 const path = require('path');
 const cors = require('cors');
-const fileUpload = require('express-fileupload'); // Required for ZIP uploads
+const fileUpload = require('express-fileupload');
 
 const dbManager = require('./db');
 const sceneManager = require('./scenes');
 const adminManager = require('./admin');
-const ShowManager = require('./showManager'); // New manager for ZIP/Files
+const ShowManager = require('./showManager');
 const translations = require("./i18n");
+
+// --- VERSION CONFIGURATION ---
+const VERSION = "1.0.0-beta";
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 // --- CONFIGURATION CORS ---
-// On autorise tout pour le développement, ou on cible l'origine précise
 app.use(cors({
-    origin: "http://localhost:5173", // L'adresse de ton frontend Vite
+    origin: process.env.CORS_ORIGIN || "*",
     methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type", "x-admin-token"] // Important: autorise ton header perso !
+    allowedHeaders: ["Content-Type", "x-admin-token"]
 }));
 
-// Middleware for handling file uploads (ZIP packs)
 app.use(fileUpload());
 
 // --- INITIAL STATE & PERSISTENCE ---
 const savedState = dbManager.loadState();
 let state = savedState || {
-    activeShowId: null,      // Name of the show folder
-    isLive: false,           // Show access toggle
+    activeShowId: null,
+    isLive: false,
     currentSceneIndex: 0,
     activeUsers: [],
     pendingRequests: [],
@@ -44,7 +45,6 @@ let state = savedState || {
 
 if (!state.adminTokens) state.adminTokens = [];
 
-// Global config object that holds current show data
 let showConfig = {
     name: "No show loaded",
     lang: "fr",
@@ -55,10 +55,6 @@ const persist = () => dbManager.saveState(state);
 
 // --- SHOW MANAGEMENT HELPERS ---
 
-/**
- * Load a show configuration from the persistent storage
- * Looks for config.json inside the show's specific folder
- */
 const loadShowConfig = (showId) => {
     try {
         const configPath = path.join(__dirname, '..', 'shows', showId, 'config.json');
@@ -72,16 +68,19 @@ const loadShowConfig = (showId) => {
     }
 };
 
-// Initial load if a show was active
 if (state.activeShowId) {
     loadShowConfig(state.activeShowId);
 }
 
+/**
+ * Prepares synchronization data for clients.
+ * Includes version and active pack info.
+ */
 const getSyncData = () => {
-    // Base data common to both Live and Offline states
     const baseData = {
         isLive: state.isLive,
-        activeShowId: state.activeShowId, // <--- CRUCIAL: Send this so Admin sees which pack is loaded
+        activeShowId: state.activeShowId,
+        version: VERSION, // <--- Sent to all clients (Public & Admin)
         ui: translations[showConfig.lang] || translations['fr']
     };
 
@@ -109,6 +108,7 @@ const refreshAdminLists = () => {
 
 const getContext = () => ({
     currentScene: showConfig.scenes[state.currentSceneIndex],
+    version: VERSION, // <--- Also available in the global context
     ...state,
     refreshAdminLists,
     getSyncData,
@@ -125,12 +125,8 @@ const adminAction = (callback) => (data) => {
     }
 };
 
-// --- HTTP ROUTES (FOR FILE UPLOADS) ---
+// --- HTTP ROUTES ---
 
-/**
- * Route to upload a Show Pack (ZIP)
- * Using HTTP because ZIP files can be large for Socket.io
- */
 app.post('/admin/upload-show', async (req, res) => {
     const token = req.headers['x-admin-token'];
     if (!isValidAdmin(token)) return res.status(401).send('Unauthorized');
@@ -141,7 +137,6 @@ app.post('/admin/upload-show', async (req, res) => {
 
     try {
         const uploadedFile = Object.values(req.files)[0];
-
         if (!uploadedFile.name.endsWith('.zip')) {
             return res.status(400).send('Only ZIP files are allowed');
         }
@@ -159,12 +154,14 @@ app.post('/admin/upload-show', async (req, res) => {
 io.on('connection', (socket) => {
     socket.emit('sync_state', getSyncData());
 
-    // --- ADMIN AUTHENTICATION ---
     socket.on('admin_login', (data) => {
         const { password, token } = (typeof data === 'string') ? { password: data } : data;
 
         if (password && password === process.env.ADMIN_PASSWORD) {
-            const newToken = crypto.randomBytes(32).toString('hex');
+            const newToken = crypto
+                .createHmac('sha256', process.env.SECRET_TOKEN)
+                .update(crypto.randomBytes(16))
+                .digest('hex');
             state.adminTokens.push(newToken);
             if (state.adminTokens.length > 50) state.adminTokens.shift();
             persist();
@@ -192,15 +189,11 @@ io.on('connection', (socket) => {
         socket.emit('login_error', 'ERROR_INVALID_CREDENTIALS');
     });
 
-    // --- PROTECTED ADMIN ACTIONS ---
-
-    // Get the list of installed shows
     socket.on('admin_get_shows', adminAction(async () => {
         const shows = await ShowManager.listShows();
         socket.emit('admin_shows_list', shows);
     }));
 
-    // Delete a show pack
     socket.on('admin_delete_show', adminAction(async (data) => {
         await ShowManager.deleteShow(data.showId);
         const shows = await ShowManager.listShows();
@@ -237,13 +230,11 @@ io.on('connection', (socket) => {
         io.emit('sync_state', getSyncData());
     }));
 
-    // --- SCENE EVENTS ---
     const sceneEvents = ['send_proposal', 'admin_approve_proposal', 'admin_delete_proposal', 'admin_clear_all_proposals'];
     sceneEvents.forEach(event => {
         socket.on(event, (data) => sceneManager.handleEvent(socket, io, event, data, getContext()));
     });
 
-    // --- PUBLIC JOIN & RECONNECT LOGIC ---
     socket.on('join_request', (data) => {
         if (!state.isLive && !data.isReconnect) {
             return socket.emit('status_update', { status: 'rejected', reason: "ERROR_SHOW_NOT_STARTED" });
@@ -301,4 +292,14 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(process.env.PORT || 3000, () => console.log("Server Ready"));
+// --- START SERVER WITH VERSION LOG ---
+server.listen(process.env.PORT || 3000, () => {
+    console.log(`
+=============================================
+   OPEN IMPRO LIVE - Version ${VERSION}
+=============================================
+   Server Ready on port ${process.env.PORT || 3000}
+   Mode: ${process.env.NODE_ENV || 'development'}
+=============================================
+    `);
+});

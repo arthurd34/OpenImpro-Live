@@ -23,9 +23,22 @@ body {
     background-image: radial-gradient(circle at top right, #1e1b4b, #0f172a);
     color: white;
     font-family: var(--font-main);
-    min-height: 100vh;
-    overflow-x: hidden;
+    min-height: 100vh; /* Garde ça */
+    display: flex;     /* AJOUT : Permet au body de gérer la hauteur totale */
+    flex-direction: column;
 }
+
+footer {
+    width: 100%;
+    margin-top: auto; /* C'est ça qui le pousse en bas */
+    padding: 30px 20px;
+    text-align: center;
+    opacity: 0.6;
+    font-size: 0.8rem;
+    color: white;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
 
 /* ==========================================================================
    2. LAYOUT & CONTAINERS
