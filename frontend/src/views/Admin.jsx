@@ -153,7 +153,8 @@ const AdminView = () => {
     // --- RENDER: LOGIN ---
     if (!auth) return (
         <div className="card" style={{ maxWidth: '400px', margin: '100px auto', textAlign: 'center' }}>
-            <h2>{t(ui, 'ADMIN_LOGIN_TITLE')}</h2>
+            <h2>CECI EST UN TEST</h2>
+            {/*<h2>{t(ui, 'ADMIN_LOGIN_TITLE')}</h2>*/}
             <form onSubmit={handleLogin}>
                 <input
                     type="password"
