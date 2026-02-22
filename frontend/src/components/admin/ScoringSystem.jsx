@@ -14,7 +14,7 @@ const ScoringSystem = ({ state, users, ui, onAddPoints, onReset, onToggleVisibil
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                 <h3 style={{ margin: 0 }}>🏆 {t(ui, 'ADMIN_SCORES_TITLE')}</h3>
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <span style={{ fontSize: '0.8rem' }}>Visible sur les téléphones</span>
+                    <span style={{ fontSize: '0.8rem' }}>Afficher le classement sur les téléphones</span>
                     <label className="switch">
                         <input
                             type="checkbox"

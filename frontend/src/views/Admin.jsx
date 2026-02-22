@@ -138,6 +138,19 @@ const AdminView = () => {
         newCodeInputRef.current.value = "";
     };
 
+    /**
+     * Specific handler for the Live Mode toggle
+     * with confirmation prompt when disabling.
+     */
+    const handleToggleLive = (requestedValue) => {
+        if (requestedValue === false) {
+            // Confirm ending the show
+            const confirmEnd = window.confirm("Voulez-vous mettre fin au spectacle ? (Cela expulsera tout le monde)");
+            if (!confirmEnd) return;
+        }
+        emitAdmin('admin_toggle_live', { value: requestedValue });
+    };
+
     // --- RENDER: LOGIN ---
     if (!auth) return (
         <div className="card" style={{ maxWidth: '400px', margin: '100px auto' }}>
@@ -190,7 +203,14 @@ const AdminView = () => {
                         onDelete={(id) => window.confirm(t(ui, 'ADMIN_CONFIRM_DELETE')) && emitAdmin('admin_delete_show', { showId: id })}
                         onUpload={handleFileUpload}
                         fileInputRef={fileInputRef}
-                        emitAdmin={emitAdmin}
+                        emitAdmin={(event, data) => {
+                            // Intercept toggle live for confirmation
+                            if (event === 'admin_toggle_live') {
+                                handleToggleLive(data.value);
+                            } else {
+                                emitAdmin(event, data);
+                            }
+                        }}
                     />
 
                     <AccessControl

@@ -41,31 +41,26 @@ let state = savedState || {
     allProposals: [],
     adminTokens: [],
     allowNewJoins: true,
-    // New access configuration
     accessConfig: {
-        mode: 'PUBLIC', // 'PUBLIC' or 'WHITELIST'
+        mode: 'PUBLIC',
         publicCode: '1234',
-        whitelist: [] // { code: 'ABC', used: false, playerName: '' }
+        whitelist: []
     },
-    // New: Global scoring state
-    scores: {}, // { "playerName": scoreValue }
-    isScoreVisible: false // New: Control scoreboard visibility for players
+    scores: {},
+    isScoreVisible: false
 };
 
 if (!state.adminTokens) state.adminTokens = [];
-// Ensure structure exists for older saved states
 if (!state.accessConfig) {
     state.accessConfig = { mode: 'PUBLIC', publicCode: '1234', whitelist: [] };
 }
-// Ensure scores object exists
 if (!state.scores) state.scores = {};
-// Ensure visibility property exists for saved states
 if (state.isScoreVisible === undefined) state.isScoreVisible = false;
 
 let showConfig = {
     name: "No show loaded",
     lang: "fr",
-    hasPoints: false, // Default: no points unless specified in show JSON
+    hasPoints: false,
     scenes: [{ id: 'OFFLINE', title: "Offline", type: "WAITING", params: {} }]
 };
 
@@ -92,38 +87,49 @@ if (state.activeShowId) {
 
 /**
  * Prepares synchronization data for clients.
- * Includes version and active pack info.
  */
 const getSyncData = () => {
+    // Clone original scenes
+    let playlist = [...showConfig.scenes];
+
+    // --- DYNAMIC: Auto-inject Leaderboard if hasPoints is true ---
+    if (showConfig.hasPoints) {
+        playlist.push({
+            id: 'AUTO_LEADERBOARD',
+            title: "🏆 " + (translations[showConfig.lang]?.ADMIN_SCORES_TITLE || "Classement"),
+            type: 'LEADERBOARD',
+            params: {}
+        });
+    }
+
     const baseData = {
         isLive: state.isLive,
         activeShowId: state.activeShowId,
-        version: VERSION, // <--- Sent to all clients (Public & Admin)
+        version: VERSION,
         ui: translations[showConfig.lang] || translations['fr'],
-        // Public only needs to know the mode and the allow status
         allowNewJoins: state.allowNewJoins,
         accessMode: state.accessConfig.mode,
         showName: showConfig.name || '',
-        // Scoring info based on current show config
         hasPoints: showConfig.hasPoints || false,
         scores: state.scores,
-        isScoreVisible: state.isScoreVisible // Send visibility status to all clients
+        isScoreVisible: state.isScoreVisible,
+        allProposals: state.allProposals
     };
 
     if (!state.isLive) {
         return {
             ...baseData,
-            accessConfig: state.accessConfig, // Admins need this even if not live
+            accessConfig: state.accessConfig,
             currentScene: { id: 'OFFLINE', type: 'WAITING', params: { titleDisplay: "SHOW_NOT_STARTED" } }
         };
     }
 
     return {
         ...baseData,
-        currentScene: showConfig.scenes[state.currentSceneIndex],
+        currentScene: playlist[state.currentSceneIndex] || playlist[0],
         currentIndex: state.currentSceneIndex,
-        playlist: showConfig.scenes,
-        accessConfig: state.accessConfig // Full config for admin sync
+        playlist: playlist,
+        accessConfig: state.accessConfig
     };
 };
 
@@ -132,13 +138,12 @@ const isValidAdmin = (token) => state.adminTokens && state.adminTokens.includes(
 const refreshAdminLists = () => {
     io.to('admin_room').emit('admin_user_list', state.activeUsers);
     io.to('admin_room').emit('admin_pending_list', state.pendingRequests);
-    // Sync full state to admin to refresh access control UI
     io.to('admin_room').emit('sync_state', getSyncData());
 };
 
 const getContext = () => ({
     currentScene: showConfig.scenes[state.currentSceneIndex],
-    version: VERSION, // <--- Also available in the global context
+    version: VERSION,
     ...state,
     refreshAdminLists,
     getSyncData,
@@ -220,34 +225,22 @@ io.on('connection', (socket) => {
         socket.emit('login_error', 'ERROR_INVALID_CREDENTIALS');
     });
 
-    // ACCESS CONTROL CONFIGURATION
     socket.on('admin_update_access_config', adminAction((data) => {
         adminManager.updateAccessConfig(socket, io, data, getContext());
     }));
 
     // --- SCORING ACTIONS ---
-    /**
-     * Allows admin to add/subtract points from a specific player.
-     * Only works if current show hasPoints: true.
-     */
     socket.on('admin_add_points', adminAction((data) => {
         if (!showConfig.hasPoints) return;
-
         const { playerName, amount } = data;
         if (!playerName) return;
-
         if (!state.scores[playerName]) state.scores[playerName] = 0;
         state.scores[playerName] += amount;
-
         persist();
-        // Sync new scores to everyone
         io.emit('sync_state', getSyncData());
         refreshAdminLists();
     }));
 
-    /**
-     * Reset all scores to zero.
-     */
     socket.on('admin_reset_scores', adminAction(() => {
         state.scores = {};
         persist();
@@ -255,15 +248,33 @@ io.on('connection', (socket) => {
         refreshAdminLists();
     }));
 
-    /**
-     * Toggle visibility of the leaderboard for players.
-     */
     socket.on('admin_toggle_score_visibility', adminAction((data) => {
         state.isScoreVisible = data.value;
         persist();
-        // Sync visibility status to everyone
         io.emit('sync_state', getSyncData());
         refreshAdminLists();
+    }));
+
+    socket.on('admin_display_proposal', adminAction((data) => {
+        const { id, value } = data;
+        state.allProposals = state.allProposals.map(p => ({
+            ...p,
+            isDisplayed: p.id === id ? value : p.isDisplayed
+        }));
+        persist();
+        io.emit('admin_sync_proposals', state.allProposals);
+        io.emit('sync_state', getSyncData());
+    }));
+
+    socket.on('admin_set_winner', adminAction((data) => {
+        const { id, value } = data;
+        state.allProposals = state.allProposals.map(p => ({
+            ...p,
+            isWinner: p.id === id ? value : p.isWinner
+        }));
+        persist();
+        io.emit('admin_sync_proposals', state.allProposals);
+        io.emit('sync_state', getSyncData());
     }));
 
     socket.on('admin_get_shows', adminAction(async () => {
@@ -282,23 +293,31 @@ io.on('connection', (socket) => {
         state.activeShowId = data.showId;
         state.currentSceneIndex = 0;
         state.isLive = false;
-        // Optionally reset scores on show load
-        // state.scores = {};
         persist();
         io.emit('sync_state', getSyncData());
     }));
 
     socket.on('admin_toggle_live', adminAction((data) => {
         state.isLive = data.value;
+        if (state.isLive === false) {
+            state.activeUsers = [];
+            state.pendingRequests = [];
+            state.scores = {};
+            io.emit('status_update', {
+                status: 'session_expired',
+                reason: "Le spectacle est terminé. Merci de votre participation !"
+            });
+        }
         persist();
         io.emit('sync_state', getSyncData());
+        refreshAdminLists();
     }));
 
     socket.on('admin_toggle_joins', adminAction((data) => {
         state.allowNewJoins = data.value;
         persist();
         io.to('admin_room').emit('admin_joins_status', state.allowNewJoins);
-        refreshAdminLists(); // Ensure admin UI reflects the change
+        refreshAdminLists();
     }));
 
     socket.on('admin_approve_user', adminAction((data) => adminManager.approveUser(socket, io, data, getContext())));
@@ -316,12 +335,9 @@ io.on('connection', (socket) => {
     });
 
     socket.on('join_request', (data) => {
-        // 1. Basic check: is the show live?
         if (!state.isLive && !data.isReconnect) {
             return socket.emit('status_update', { status: 'rejected', reason: "ERROR_SHOW_NOT_STARTED" });
         }
-
-        // 2. Handle Reconnection
         if (data.isReconnect && data.token) {
             const existingUser = state.activeUsers.find(u => u.token === data.token);
             if (existingUser) {
@@ -337,59 +353,35 @@ io.on('connection', (socket) => {
                 return socket.emit('status_update', { status: 'session_expired', reason: "ERROR_SESSION_EXPIRED" });
             }
         }
-
-        // 3. New Joins validation
         if (!state.allowNewJoins) {
             return socket.emit('status_update', { status: 'rejected', reason: "ERROR_JOINS_CLOSED" });
         }
-
-        // --- NAME VALIDATION (25 CHARS MAX) ---
         const rawName = data.name ? data.name.trim() : "";
         if (!rawName) return;
-
         if (rawName.length > 25) {
             return socket.emit('status_update', { status: 'rejected', reason: "ERROR_NAME_TOO_LONG", transData: { max: 25 } });
         }
-
-        // --- ACCESS CODE VALIDATION ---
         const entryCode = data.entryCode ? data.entryCode.trim().toUpperCase() : "";
-
         if (state.accessConfig.mode === 'PUBLIC') {
             if (entryCode !== state.accessConfig.publicCode.toUpperCase()) {
                 return socket.emit('status_update', { status: 'rejected', reason: "ERROR_INVALID_CODE" });
             }
         } else if (state.accessConfig.mode === 'WHITELIST') {
             const codeObj = state.accessConfig.whitelist.find(c => c.code === entryCode);
-            if (!codeObj) {
-                return socket.emit('status_update', { status: 'rejected', reason: "ERROR_INVALID_CODE" });
+            if (!codeObj || codeObj.used) {
+                return socket.emit('status_update', { status: 'rejected', reason: !codeObj ? "ERROR_INVALID_CODE" : "ERROR_CODE_ALREADY_USED" });
             }
-            if (codeObj.used) {
-                return socket.emit('status_update', { status: 'rejected', reason: "ERROR_CODE_ALREADY_USED" });
-            }
-
-            // We will mark the code as used ONLY if the name is also valid
         }
-
-        // --- DUPLICATE NAME CHECK ---
         const nameLower = rawName.toLowerCase();
         const isNameTaken = state.activeUsers.some(u => u.name.toLowerCase() === nameLower) ||
             state.pendingRequests.some(r => r.name.toLowerCase() === nameLower);
-
         if (isNameTaken) {
             return socket.emit('status_update', { status: 'rejected', reason: "ERROR_NAME_TAKEN" });
         }
-
-        // --- SUCCESS: COMMIT JOIN ---
-
-        // If we are in Whitelist mode, officially mark the code as consumed
         if (state.accessConfig.mode === 'WHITELIST') {
             const codeObj = state.accessConfig.whitelist.find(c => c.code === entryCode);
-            if (codeObj) {
-                codeObj.used = true;
-                codeObj.playerName = rawName;
-            }
+            if (codeObj) { codeObj.used = true; codeObj.playerName = rawName; }
         }
-
         const userToken = crypto.randomBytes(16).toString('hex');
         const req = {
             socketId: socket.id,
@@ -400,10 +392,8 @@ io.on('connection', (socket) => {
             entryCode: entryCode,
             score: 0
         };
-
         state.pendingRequests.push(req);
         persist();
-
         socket.emit('status_update', { status: 'pending', token: userToken });
         io.to('admin_room').emit('admin_new_request', req);
         refreshAdminLists();
@@ -421,7 +411,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// --- START SERVER WITH VERSION LOG ---
 server.listen(process.env.PORT || 3000, () => {
     console.log(`
 =============================================

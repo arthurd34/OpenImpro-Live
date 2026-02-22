@@ -37,6 +37,7 @@ const translations = {
         ERROR_INVALID_CODE: "Code d'accès invalide.",
         ERROR_CODE_ALREADY_USED: "Ce code a déjà été utilisé.",
         ERROR_NAME_TOO_LONG: "Le nom est trop long, maximum {{max}} caractères autorisés.",
+        ERROR_SHOW_ENDED: "Le spectacle est terminé, merci d'être venu !",
         SHOW_NOT_STARTED: "Spectacle en attente...",
 
         // --- ADMIN PANEL ---
@@ -163,6 +164,7 @@ const translations = {
         ERROR_INVALID_CODE: "Invalid access code.",
         ERROR_CODE_ALREADY_USED: "This code has already been used.",
         ERROR_NAME_TOO_LONG: "Name is too long, maximum {{max}} characters allowed.",
+        ERROR_SHOW_ENDED: "The show has ended, thank you for coming!",
         SHOW_NOT_STARTED: "Show starting soon...",
 
         // --- ADMIN PANEL ---
