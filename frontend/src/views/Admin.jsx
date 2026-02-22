@@ -42,7 +42,6 @@ const AdminView = () => {
             if (localStorage.getItem('admin_remember') === 'true') {
                 localStorage.setItem('admin_token', data.token);
             }
-            // Fetch shows list once authenticated
             socket.emit('admin_get_shows', { token: data.token });
         });
 
@@ -51,7 +50,6 @@ const AdminView = () => {
             handleLogout();
         });
 
-        // Auto-login on mount
         if (token && !auth) {
             socket.emit('admin_login', { token });
         }
@@ -132,10 +130,10 @@ const AdminView = () => {
             });
 
             if (response.ok) {
-                emitAdmin('admin_get_shows'); // Refresh list via socket
-                alert(t(ui, 'ADMIN_UPLOAD_SUCCESS', 'Importation réussie !'));
+                emitAdmin('admin_get_shows');
+                alert(t(ui, 'ADMIN_UPLOAD_SUCCESS'));
             } else {
-                alert(t(ui, 'ADMIN_UPLOAD_ERROR', 'Erreur lors de l\'importation.'));
+                alert(t(ui, 'ADMIN_UPLOAD_ERROR'));
             }
         } catch (err) {
             console.error("Upload failed:", err);
@@ -184,8 +182,28 @@ const AdminView = () => {
             )}
 
             <div style={{ opacity: isConnected ? 1 : 0.5, pointerEvents: isConnected ? 'all' : 'none' }}>
-                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                    <h1>{t(ui, 'ADMIN_DASHBOARD_TITLE')}</h1>
+                <header style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                    padding: '10px 20px',
+                    background: 'rgba(255,255,255,0.05)',
+                    borderRadius: '12px'
+                }}>
+                    <div>
+                        <h1 style={{ margin: 0 }}>{t(ui, 'ADMIN_DASHBOARD_TITLE')}</h1>
+                        {/* ACTIVE SHOW INDICATOR */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '5px' }}>
+                            <span style={{
+                                width: '8px', height: '8px', borderRadius: '50%',
+                                background: state?.activeShowId ? '#22c55e' : '#ef4444'
+                            }}></span>
+                            <small style={{ opacity: 0.8, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                                {state?.activeShowId ? `Pack: ${state.activeShowId}` : t(ui, 'ADMIN_NO_SHOW_LOADED')}
+                            </small>
+                        </div>
+                    </div>
                     <button onClick={handleLogout} className="btn-danger">{t(ui, 'ADMIN_BTN_LOGOUT')}</button>
                 </header>
 
@@ -200,21 +218,34 @@ const AdminView = () => {
                                 {t(ui, 'ADMIN_SELECT_SHOW')}
                             </label>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {availableShows.map(showId => (
-                                    <div key={showId} className="user-row" style={{ border: state?.activeShowId === showId ? '1px solid var(--primary)' : '1px solid transparent' }}>
-                                        <span style={{ fontWeight: state?.activeShowId === showId ? 'bold' : 'normal' }}>
-                                            {showId} {state?.activeShowId === showId && "✓"}
-                                        </span>
-                                        <div style={{ display: 'flex', gap: '5px' }}>
-                                            <button onClick={() => emitAdmin('admin_load_show', { showId })}>
-                                                {t(ui, 'ADMIN_BTN_LOAD')}
-                                            </button>
-                                            <button className="btn-danger" onClick={() => {
-                                                if (window.confirm(t(ui, 'ADMIN_CONFIRM_DELETE'))) emitAdmin('admin_delete_show', { showId });
-                                            }}>🗑</button>
+                                {availableShows.map(showId => {
+                                    const isActive = state?.activeShowId === showId;
+                                    return (
+                                        <div
+                                            key={showId}
+                                            className="user-row"
+                                            style={{
+                                                border: isActive ? '1px solid var(--primary)' : '1px solid transparent',
+                                                background: isActive ? 'rgba(0, 212, 255, 0.05)' : 'rgba(255,255,255,0.02)'
+                                            }}
+                                        >
+                                            <span style={{ color: isActive ? 'var(--primary)' : 'inherit', fontWeight: isActive ? 'bold' : 'normal' }}>
+                                                {showId} {isActive && "✓"}
+                                            </span>
+                                            <div style={{ display: 'flex', gap: '5px' }}>
+                                                {/* Only show Load button if NOT active */}
+                                                {!isActive && (
+                                                    <button onClick={() => emitAdmin('admin_load_show', { showId })}>
+                                                        {t(ui, 'ADMIN_BTN_LOAD')}
+                                                    </button>
+                                                )}
+                                                <button className="btn-danger" onClick={() => {
+                                                    if (window.confirm(t(ui, 'ADMIN_CONFIRM_DELETE'))) emitAdmin('admin_delete_show', { showId });
+                                                }}>🗑</button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 {availableShows.length === 0 && <p style={{ fontSize: '0.8rem', opacity: 0.5 }}>{t(ui, 'ADMIN_EMPTY_LIST')}</p>}
                             </div>
                         </div>
@@ -228,7 +259,7 @@ const AdminView = () => {
                         </div>
 
                         {/* Live Toggle */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px', background: isLive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '15px', background: isLive ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: `1px solid ${isLive ? 'var(--success)' : 'transparent'}` }}>
                             <div>
                                 <h4 style={{ margin: 0 }}>{t(ui, 'ADMIN_LIVE_MODE')}</h4>
                                 <small style={{ opacity: 0.7 }}>{isLive ? t(ui, 'ADMIN_LIVE_ON') : t(ui, 'ADMIN_LIVE_OFF')}</small>

@@ -74,7 +74,8 @@ const translations = {
         ADMIN_UPLOADING: "Envoi en cours...",
         ADMIN_UPLOAD_SUCCESS: "Importation réussie !",
         ADMIN_UPLOAD_ERROR: "Erreur lors de l'importation.",
-        ADMIN_CONFIRM_DELETE: "Supprimer définitivement ce spectacle ?"
+        ADMIN_CONFIRM_DELETE: "Supprimer définitivement ce spectacle ?",
+        ADMIN_NO_SHOW_LOADED: "Aucun spectacle chargé. Veuillez charger un spectacle."
     },
     en: {
         // --- CONNECTION SCENE ---
@@ -149,7 +150,8 @@ const translations = {
         ADMIN_UPLOADING: "Uploading...",
         ADMIN_UPLOAD_SUCCESS: "Upload successful!",
         ADMIN_UPLOAD_ERROR: "Error during upload.",
-        ADMIN_CONFIRM_DELETE: "Permanently delete this show?"
+        ADMIN_CONFIRM_DELETE: "Permanently delete this show?",
+        ADMIN_NO_SHOW_LOADED: "No show loaded. Please load a show."
     }
 };
 

@@ -1,4 +1,3 @@
-// backend/src/server.js
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -79,20 +78,25 @@ if (state.activeShowId) {
 }
 
 const getSyncData = () => {
+    // Base data common to both Live and Offline states
+    const baseData = {
+        isLive: state.isLive,
+        activeShowId: state.activeShowId, // <--- CRUCIAL: Send this so Admin sees which pack is loaded
+        ui: translations[showConfig.lang] || translations['fr']
+    };
+
     if (!state.isLive) {
         return {
-            isLive: false,
-            ui: translations[showConfig.lang] || translations['fr'],
+            ...baseData,
             currentScene: { id: 'OFFLINE', type: 'WAITING', params: { titleDisplay: "SHOW_NOT_STARTED" } }
         };
     }
 
     return {
-        isLive: true,
+        ...baseData,
         currentScene: showConfig.scenes[state.currentSceneIndex],
         currentIndex: state.currentSceneIndex,
-        playlist: showConfig.scenes,
-        ui: translations[showConfig.lang] || translations['fr']
+        playlist: showConfig.scenes
     };
 };
 
