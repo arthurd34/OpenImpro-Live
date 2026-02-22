@@ -82,7 +82,7 @@ const AdminView = () => {
         socket.on('disconnect', onDisconnect);
 
 
-        console.log("URL IS :"+ import.meta.env.VITE_BACKEND_URL);
+        console.log(`URL IS : ${import.meta.env.VITE_BACKEND_URL}`);
         return () => {
             socket.off('login_success');
             socket.off('login_error');
