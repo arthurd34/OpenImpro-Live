@@ -1,9 +1,23 @@
 import React from 'react';
 import { t } from '../../utils/i18n';
 
-const ConnectionScene = ({ name, setName, handleJoin, status, message, ui }) => {
+const ConnectionScene = ({ name, setName, handleJoin, status, message, ui, isLive }) => {
 
-    // --- Loading State: Waiting for Admin approval ---
+    // --- CASE 1: Show is NOT LIVE yet (Welcome message only) ---
+    if (isLive === false) {
+        return (
+            <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                <h2>{t(ui, 'CONN_WELCOME_TITLE', 'Bienvenue !')}</h2>
+                <div style={{ fontSize: '4rem', margin: '20px 0' }}>🎭</div>
+                <p style={{ lineHeight: '1.6', opacity: 0.9 }}>
+                    {t(ui, 'CONN_NOT_STARTED_MSG', "Le spectacle va bientôt commencer. Préparez-vous, les connexions ouvriront d'un instant à l'autre !")}
+                </p>
+                <div className="spinner" style={{ marginTop: '30px' }}></div>
+            </div>
+        );
+    }
+
+    // --- CASE 2: Waiting for Admin approval ---
     if (status === 'pending') {
         return (
             <div className="card" style={{ textAlign: 'center' }}>
@@ -15,7 +29,7 @@ const ConnectionScene = ({ name, setName, handleJoin, status, message, ui }) => 
         );
     }
 
-    // --- Default State: Login Form ---
+    // --- CASE 3: Normal Login Form (Show is Live) ---
     return (
         <div className="card">
             <h2>{t(ui, 'CONN_JOIN_TITLE')}</h2>
@@ -26,17 +40,18 @@ const ConnectionScene = ({ name, setName, handleJoin, status, message, ui }) => 
                     onChange={e => setName(e.target.value)}
                     autoFocus
                 />
-                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px' }}>
+                <button
+                    type="submit"
+                    className="btn-primary"
+                    style={{ width: '100%', marginTop: '10px' }}
+                    disabled={!name.trim()}
+                >
                     {t(ui, 'CONN_BTN_JOIN')}
                 </button>
             </form>
 
-            {/* Display potential error messages (like "Name already taken") */}
             {message && (
                 <div className="error-box" style={{ marginTop: '15px' }}>
-                    {/* Note: message is usually a key sent by server like ERROR_NAME_TAKEN
-                        We try to translate it, if not found, it displays the raw message
-                    */}
                     {t(ui, message)}
                 </div>
             )}

@@ -1,4 +1,3 @@
-// src/views/PublicView.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import { t } from '../utils/i18n';
@@ -8,6 +7,7 @@ import ConnectionScene from '../components/scenes/ConnectionScene';
 import ProposalScene from '../components/scenes/ProposalScene';
 import WaitingScene from '../components/scenes/WaitingScene';
 
+// Connect to the backend socket server
 const socket = io(`http://${window.location.hostname}:3000`);
 
 const PublicView = () => {
@@ -22,24 +22,19 @@ const PublicView = () => {
     const timerRef = useRef(null);
     const nameRef = useRef('');
 
-    // --- Translation Helper Context ---
     const ui = gameState?.ui || {};
 
     useEffect(() => {
-        // --- Socket Connectivity Management ---
         const onConnect = () => {
             setIsConnected(true);
             setCountdown(15);
             if (timerRef.current) clearInterval(timerRef.current);
-
-            // Auto-reconnect with token if connection was lost
             const token = localStorage.getItem('player_token');
             if (token) socket.emit('join_request', { token, isReconnect: true });
         };
 
         const onDisconnect = () => {
             setIsConnected(false);
-            // Start countdown for auto-refresh on failure
             timerRef.current = setInterval(() => {
                 setCountdown(prev => {
                     if (prev <= 1) {
@@ -64,25 +59,18 @@ const PublicView = () => {
     useEffect(() => { nameRef.current = name; }, [name]);
 
     useEffect(() => {
-        // --- Session Recovery on Mount ---
         const savedToken = localStorage.getItem('player_token');
         const savedName = localStorage.getItem('player_name');
 
         if (savedToken) {
             if (savedName) setName(savedName);
             setStatus('pending');
-            // Identify by token instead of name for security
             socket.emit('join_request', { token: savedToken, isReconnect: true });
         }
 
-        // --- Server Status Updates ---
         socket.on('status_update', (data) => {
             setStatus(data.status);
-
-            // Save token if provided (happens on pending or approved)
-            if (data.token) {
-                localStorage.setItem('player_token', data.token);
-            }
+            if (data.token) localStorage.setItem('player_token', data.token);
 
             if (data.status === 'approved') {
                 const finalName = data.name || nameRef.current;
@@ -91,7 +79,6 @@ const PublicView = () => {
                 setMessage('');
             } else {
                 setMessage(data.reason || '');
-                // Cleanup on terminal states
                 if (['rejected', 'kicked', 'session_expired'].includes(data.status)) {
                     localStorage.removeItem('player_name');
                     localStorage.removeItem('player_token');
@@ -102,12 +89,10 @@ const PublicView = () => {
         });
 
         socket.on('sync_state', (state) => setGameState(state));
-
         socket.on('name_updated', (newName) => {
             setName(newName);
             localStorage.setItem('player_name', newName);
         });
-
         socket.on('user_history_update', (userProposals) => setHistory(userProposals));
 
         return () => {
@@ -123,11 +108,8 @@ const PublicView = () => {
         if (!name.trim()) return;
         setMessage('');
         setStatus('pending');
-        // Initial request only sends the name
         socket.emit('join_request', { name: name.trim(), isReconnect: false });
     };
-
-    // --- UI COMPONENTS ---
 
     const ConnectionErrorOverlay = () => (
         <div style={{
@@ -143,19 +125,16 @@ const PublicView = () => {
             <p style={{ fontSize: '0.9rem', opacity: 0.8 }}>
                 {t(ui, 'REFRESH_IN')} <strong>{countdown}s</strong>
             </p>
-            <button
-                className="btn-primary"
-                style={{ marginTop: '20px' }}
-                onClick={() => window.location.reload()}
-            >
+            <button className="btn-primary" style={{ marginTop: '20px' }} onClick={() => window.location.reload()}>
                 {t(ui, 'REFRESH_NOW')}
             </button>
         </div>
     );
 
-    // --- MAIN ROUTING ---
+    // --- MAIN ROUTING LOGIC ---
 
-    // 1. Connection phase (Login or Pending)
+    // 1. Connection Phase (Login or awaiting approval)
+    // Now including isLive check to show welcome message instead of form
     if (status !== 'approved') {
         return (
             <ConnectionScene
@@ -165,12 +144,26 @@ const PublicView = () => {
                 status={status}
                 message={message}
                 ui={ui}
+                isLive={gameState?.isLive} // Pass live status to the scene
             />
         );
     }
 
+    // 2. LIVE Security Check for already logged-in users
+    if (gameState && gameState.isLive === false) {
+        return (
+            <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>⏳</div>
+                <h2>{t(ui, 'SHOW_NOT_STARTED')}</h2>
+                <p style={{ opacity: 0.7, maxWidth: '300px', margin: '0 auto' }}>
+                    {t(ui, 'ERROR_SHOW_NOT_STARTED')}
+                </p>
+                <div className="spinner" style={{ marginTop: '40px' }}></div>
+            </div>
+        );
+    }
+
     const sceneType = gameState?.currentScene?.type;
-    // We pass the token in props if needed by sub-scenes (e.g. for secure voting)
     const sceneProps = {
         socket,
         name,
@@ -179,31 +172,31 @@ const PublicView = () => {
         token: localStorage.getItem('player_token')
     };
 
-    // 2. Gameplay phase
+    // 3. Main Gameplay Phase
     return (
-        <div className="card">
+        <div className="app-container">
             {!isConnected && <ConnectionErrorOverlay />}
-
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0 }}>{name}</h3>
-                <div className="status-dot" style={{
-                    background: isConnected ? '#2ecc71' : '#e74c3c',
-                    width: 10, height: 10, borderRadius: '50%'
-                }}></div>
-            </header>
-            <hr />
-
-            {(() => {
-                switch (sceneType) {
-                    case 'PROPOSAL': return <ProposalScene {...sceneProps} />;
-                    case 'WAITING':  return <WaitingScene {...sceneProps} />;
-                    default: return (
-                        <div style={{textAlign:'center', padding:'20px'}}>
-                            {t(ui, 'WAITING_FOR_START')}
-                        </div>
-                    );
-                }
-            })()}
+            <div className="card">
+                <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ margin: 0 }}>{name}</h3>
+                    <div className="status-dot" style={{
+                        background: isConnected ? '#2ecc71' : '#e74c3c',
+                        width: 10, height: 10, borderRadius: '50%'
+                    }}></div>
+                </header>
+                <hr />
+                {(() => {
+                    switch (sceneType) {
+                        case 'PROPOSAL': return <ProposalScene {...sceneProps} />;
+                        case 'WAITING':  return <WaitingScene {...sceneProps} />;
+                        default: return (
+                            <div style={{textAlign:'center', padding:'20px'}}>
+                                {t(ui, 'WAITING_FOR_START')}
+                            </div>
+                        );
+                    }
+                })()}
+            </div>
         </div>
     );
 };

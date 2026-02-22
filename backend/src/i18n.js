@@ -3,6 +3,8 @@
 const translations = {
     fr: {
         // --- CONNECTION SCENE ---
+        CONN_WELCOME_TITLE: "Bienvenue !",
+        CONN_NOT_STARTED_MSG: "Le spectacle va bientôt commencer. Préparez-vous, les connexions ouvriront d'un instant à l'autre !",
         CONN_JOIN_TITLE: "Rejoindre le spectacle",
         CONN_INPUT_PLACEHOLDER: "Votre Nom, équipe ou n° de table",
         CONN_BTN_JOIN: "Rejoindre",
@@ -32,6 +34,8 @@ const translations = {
         ERROR_NAME_TAKEN: "Ce nom est déjà utilisé.",
         ERROR_SESSION_EXPIRED: "Session expirée.",
         ERROR_JOINS_CLOSED: "Les inscriptions sont fermées.",
+        ERROR_SHOW_NOT_STARTED: "Le spectacle n'est pas encore ouvert au public.",
+        SHOW_NOT_STARTED: "Spectacle en attente...",
 
         // --- ADMIN PANEL ---
         ERROR_INVALID_CREDENTIALS: "Identifiants invalides.",
@@ -56,9 +60,26 @@ const translations = {
         ADMIN_PROPOSALS_LIVE: "Réponses Public",
         BTN_REFRESH: "Actualiser",
         ADMIN_NO_CONTROLS_FOR_SCENE: "La scène actuelle ({{name}}) n'a pas de contrôles spécifiques.",
+
+        // --- ADMIN SHOW MANAGEMENT ---
+        ADMIN_SHOW_CONFIG_TITLE: "Configuration du Show",
+        ADMIN_SELECT_SHOW: "Charger un spectacle :",
+        ADMIN_SELECT_PH: "-- Choisir un fichier --",
+        ADMIN_LIVE_MODE: "Mode LIVE",
+        ADMIN_LIVE_ON: "Le spectacle est ouvert (Public autorisé)",
+        ADMIN_LIVE_OFF: "Accès public fermé",
+        ADMIN_ACCESS_CONTROL: "Contrôle d'Accès",
+        ADMIN_BTN_LOAD: "Charger",
+        ADMIN_BTN_UPLOAD_ZIP: "Importer un pack (.zip)",
+        ADMIN_UPLOADING: "Envoi en cours...",
+        ADMIN_UPLOAD_SUCCESS: "Importation réussie !",
+        ADMIN_UPLOAD_ERROR: "Erreur lors de l'importation.",
+        ADMIN_CONFIRM_DELETE: "Supprimer définitivement ce spectacle ?"
     },
     en: {
         // --- CONNECTION SCENE ---
+        CONN_WELCOME_TITLE: "Welcome!",
+        CONN_NOT_STARTED_MSG: "The show is about to start. Get ready, connections will open at any moment!",
         CONN_JOIN_TITLE: "Join the show",
         CONN_INPUT_PLACEHOLDER: "Your Name, team or table number",
         CONN_BTN_JOIN: "Join",
@@ -88,6 +109,8 @@ const translations = {
         ERROR_NAME_TAKEN: "This name is already taken.",
         ERROR_SESSION_EXPIRED: "Session expired.",
         ERROR_JOINS_CLOSED: "Registrations are closed.",
+        ERROR_SHOW_NOT_STARTED: "The show is not open to the public yet.",
+        SHOW_NOT_STARTED: "Show starting soon...",
 
         // --- ADMIN PANEL ---
         ERROR_INVALID_CREDENTIALS: "Invalid credentials.",
@@ -111,7 +134,22 @@ const translations = {
         ADMIN_PROMPT_REFUSE_REASON: "Reason for refusal?",
         ADMIN_PROPOSALS_LIVE: "Public Responses",
         BTN_REFRESH: "Refresh",
-        ADMIN_NO_CONTROLS_FOR_SCENE: "The current scene ({{name}}) has no specific controls."
+        ADMIN_NO_CONTROLS_FOR_SCENE: "The current scene ({{name}}) has no specific controls.",
+
+        // --- ADMIN SHOW MANAGEMENT ---
+        ADMIN_SHOW_CONFIG_TITLE: "Show Configuration",
+        ADMIN_SELECT_SHOW: "Load a show:",
+        ADMIN_SELECT_PH: "-- Select a file --",
+        ADMIN_LIVE_MODE: "LIVE Mode",
+        ADMIN_LIVE_ON: "Show is live (Public allowed)",
+        ADMIN_LIVE_OFF: "Public access closed",
+        ADMIN_ACCESS_CONTROL: "Access Control",
+        ADMIN_BTN_LOAD: "Load",
+        ADMIN_BTN_UPLOAD_ZIP: "Import pack (.zip)",
+        ADMIN_UPLOADING: "Uploading...",
+        ADMIN_UPLOAD_SUCCESS: "Upload successful!",
+        ADMIN_UPLOAD_ERROR: "Error during upload.",
+        ADMIN_CONFIRM_DELETE: "Permanently delete this show?"
     }
 };
 
