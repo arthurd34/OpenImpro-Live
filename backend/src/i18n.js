@@ -18,6 +18,7 @@ const translations = {
         PROPOSAL_SEND: "Envoyer",
         PROPOSAL_EMPTY_HISTORY: "Vous n'avez pas encore envoyé de proposition.",
         PROPOSAL_WINNER_ICON: "🏆",
+        WAITING_FOR_PROPOSALS: "En attente des propositions des joueurs...",
 
         // --- WAITING SCENE ---
         WAITING_DEFAULT_TITLE: "Attente du prochain jeu...",
@@ -79,6 +80,24 @@ const translations = {
         MAKE_BY: "Conçu et développé par",
         FOOTER_SUPPORT_CONTACT: "Support & Contact",
         FOOTER_ALL_RIGHTS: "Tous droits réservés",
+
+        // --- ADDED FOR USERMANAGEMENT & PROPOSALADMIN ---
+        INSCRIPTIONS: "Inscriptions",
+        OPEN: "Ouvertes",
+        CLOSED: "Fermées",
+        PLAYERS_COUNT: "Joueurs",
+        REQUESTS: "Demandes",
+        PLAYERS: "Joueurs",
+        NO_REQUESTS: "Aucune demande en attente",
+        NO_PLAYERS: "Aucun joueur connecté",
+        APPROVE: "Accepter",
+        DECLINE: "Refuser",
+        EDIT: "Éditer",
+        KICK: "Kick",
+        PUBLIC_RESPONSES: "Réponses Public",
+        CLEAR_LIST: "VIDER LA LISTE",
+        CONFIRM_CLEAR_PROPOSALS: "Voulez-vous vraiment vider toutes les propositions ?",
+        SET_WINNER: "🏆 Gagnant",
     },
     en: {
         // --- CONNECTION SCENE ---
@@ -99,6 +118,7 @@ const translations = {
         PROPOSAL_SEND: "Send",
         PROPOSAL_EMPTY_HISTORY: "You haven't sent any proposals yet.",
         PROPOSAL_WINNER_ICON: "🏆",
+        WAITING_FOR_PROPOSALS: "Waiting for players' proposals...",
 
         // --- WAITING SCENE ---
         WAITING_DEFAULT_TITLE: "Waiting for the next game...",
@@ -160,6 +180,24 @@ const translations = {
         MAKE_BY: "Designed and developed by",
         FOOTER_SUPPORT_CONTACT: "Support & Contact",
         FOOTER_ALL_RIGHTS: "All rights reserved",
+
+        // --- ADDED FOR USERMANAGEMENT & PROPOSALADMIN ---
+        INSCRIPTIONS: "Registrations",
+        OPEN: "Open",
+        CLOSED: "Closed",
+        PLAYERS_COUNT: "Players",
+        REQUESTS: "Requests",
+        PLAYERS: "Players",
+        NO_REQUESTS: "No pending requests",
+        NO_PLAYERS: "No players connected",
+        APPROVE: "Approve",
+        DECLINE: "Decline",
+        EDIT: "Edit",
+        KICK: "Kick",
+        PUBLIC_RESPONSES: "Audience Answers",
+        CLEAR_LIST: "CLEAR LIST",
+        CONFIRM_CLEAR_PROPOSALS: "Are you sure you want to clear all proposals?",
+        SET_WINNER: "🏆 Winner",
     }
 };
 

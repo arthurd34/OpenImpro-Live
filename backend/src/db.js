@@ -2,13 +2,18 @@ const Database = require('better-sqlite3');
 const path = require('path');
 
 const dbPath = path.resolve(__dirname, '../openimpro.db');
-const db = new Database(dbPath, { verbose: console.log });
+
+const options = process.env.NODE_ENV !== 'production'
+    ? { verbose: console.log }
+    : {};
+
+const db = new Database(dbPath, options);
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS state_persistence (
-    id INTEGER PRIMARY KEY,
-    data TEXT
-  )
+    CREATE TABLE IF NOT EXISTS state_persistence (
+                                                     id INTEGER PRIMARY KEY,
+                                                     data TEXT
+    )
 `);
 
 module.exports = {
