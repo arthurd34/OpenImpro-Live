@@ -1,5 +1,3 @@
-// backend/src/i18n.js
-
 const translations = {
     fr: {
         // --- CONNECTION SCENE ---

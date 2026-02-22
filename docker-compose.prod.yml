@@ -1,0 +1,16 @@
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "80:80" # Production port

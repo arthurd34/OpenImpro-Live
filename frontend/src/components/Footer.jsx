@@ -18,7 +18,7 @@ const Footer = ({ version, ui }) => {
             </p>
 
             <div style={{ marginTop: '10px', fontSize: '65%', fontStyle: 'italic' }}>
-                © {displayYear} Open ImproLive. {t(ui, 'FOOTER_ALL_RIGHTS', 'Tous droits réservés')}.
+                © {displayYear} Open ImproLive. {t(ui, 'FOOTER_ALL_RIGHTS')}.
             </div>
         </footer>
     );

@@ -6,10 +6,12 @@ import { t } from '../utils/i18n';
 import ConnectionScene from '../components/scenes/ConnectionScene';
 import ProposalScene from '../components/scenes/ProposalScene';
 import WaitingScene from '../components/scenes/WaitingScene';
-import Footer from '../components/Footer'; // <--- New Import
+import Footer from '../components/Footer';
 
+const protocol = window.location.protocol;
+const hostname = window.location.hostname;
 // Connect to the backend socket server
-const socket = io(`http://${window.location.hostname}:3000`);
+const socket = io(`${protocol}//${hostname}:3000`);
 
 const PublicView = () => {
     const [name, setName] = useState('');

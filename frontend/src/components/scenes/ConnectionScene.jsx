@@ -7,10 +7,10 @@ const ConnectionScene = ({ name, setName, handleJoin, status, message, ui, isLiv
     if (isLive === false) {
         return (
             <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
-                <h2>{t(ui, 'CONN_WELCOME_TITLE', 'Bienvenue !')}</h2>
+                <h2>{t(ui, 'CONN_WELCOME_TITLE')}</h2>
                 <div style={{ fontSize: '4rem', margin: '20px 0' }}>🎭</div>
                 <p style={{ lineHeight: '1.6', opacity: 0.9 }}>
-                    {t(ui, 'CONN_NOT_STARTED_MSG', "Le spectacle va bientôt commencer. Préparez-vous, les connexions ouvriront d'un instant à l'autre !")}
+                    {t(ui, 'CONN_NOT_STARTED_MSG')}
                 </p>
                 <div className="spinner" style={{ marginTop: '30px' }}></div>
             </div>

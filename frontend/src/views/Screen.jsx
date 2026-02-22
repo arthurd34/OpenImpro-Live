@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const socket = io(`http://${window.location.hostname}:3000`);
+const protocol = window.location.protocol;
+const hostname = window.location.hostname;
+
+const socket = io(`http://${protocol}//${hostname}:3000`);
 
 const ScreenView = () => {
     const [gameState, setGameState] = useState(null);
