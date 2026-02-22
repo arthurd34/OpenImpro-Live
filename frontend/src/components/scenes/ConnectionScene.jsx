@@ -4,13 +4,14 @@ import { t } from '../../utils/i18n';
 const ConnectionScene = ({
                              name,
                              setName,
-                             entryCode,     // New prop
-                             setEntryCode,  // New prop
+                             entryCode,
+                             setEntryCode,
                              handleJoin,
                              status,
                              message,
                              ui,
-                             isLive
+                             isLive,
+                             showName
                          }) => {
 
     // --- CASE 1: Show is NOT LIVE yet (Welcome message only) ---
@@ -42,7 +43,7 @@ const ConnectionScene = ({
     // --- CASE 3: Normal Login Form (Show is Live) ---
     return (
         <div className="card">
-            <h2>{t(ui, 'CONN_JOIN_TITLE')}</h2>
+            <h2>{t(ui, 'CONN_JOIN_TITLE', { showName: showName || '...' })}</h2>
             <form onSubmit={handleJoin}>
                 {/* Player Name Input */}
                 <input
@@ -87,7 +88,7 @@ const ConnectionScene = ({
 
             {message && (
                 <div className="error-box" style={{ marginTop: '15px' }}>
-                    {t(ui, message) || message}
+                    {t(ui, message)}
                 </div>
             )}
         </div>

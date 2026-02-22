@@ -94,7 +94,8 @@ const getSyncData = () => {
         ui: translations[showConfig.lang] || translations['fr'],
         // Public only needs to know the mode and the allow status
         allowNewJoins: state.allowNewJoins,
-        accessMode: state.accessConfig.mode
+        accessMode: state.accessConfig.mode,
+        showName: showConfig.name || ''
     };
 
     if (!state.isLive) {
@@ -260,10 +261,12 @@ io.on('connection', (socket) => {
     });
 
     socket.on('join_request', (data) => {
+        // 1. Basic check: is the show live?
         if (!state.isLive && !data.isReconnect) {
             return socket.emit('status_update', { status: 'rejected', reason: "ERROR_SHOW_NOT_STARTED" });
         }
 
+        // 2. Handle Reconnection
         if (data.isReconnect && data.token) {
             const existingUser = state.activeUsers.find(u => u.token === data.token);
             if (existingUser) {
@@ -280,8 +283,17 @@ io.on('connection', (socket) => {
             }
         }
 
+        // 3. New Joins validation
         if (!state.allowNewJoins) {
             return socket.emit('status_update', { status: 'rejected', reason: "ERROR_JOINS_CLOSED" });
+        }
+
+        // --- NAME VALIDATION (25 CHARS MAX) ---
+        const rawName = data.name ? data.name.trim() : "";
+        if (!rawName) return;
+
+        if (rawName.length > 25) {
+            return socket.emit('status_update', { status: 'rejected', reason: "ERROR_NAME_TOO_LONG", transData: { max: 25 } });
         }
 
         // --- ACCESS CODE VALIDATION ---
@@ -299,41 +311,38 @@ io.on('connection', (socket) => {
             if (codeObj.used) {
                 return socket.emit('status_update', { status: 'rejected', reason: "ERROR_CODE_ALREADY_USED" });
             }
-            // Temporarily mark as used to prevent race conditions during name check
-            codeObj.used = true;
-            codeObj.playerName = data.name ? data.name.trim() : "Unknown";
+
+            // We will mark the code as used ONLY if the name is also valid
         }
 
-        const nameLower = data.name ? data.name.trim().toLowerCase() : "";
-        if (!nameLower) {
-            // Rollback whitelist if name is missing
-            if (state.accessConfig.mode === 'WHITELIST') {
-                const codeObj = state.accessConfig.whitelist.find(c => c.code === entryCode);
-                if (codeObj) { codeObj.used = false; codeObj.playerName = ""; }
-            }
-            return;
-        }
-
+        // --- DUPLICATE NAME CHECK ---
+        const nameLower = rawName.toLowerCase();
         const isNameTaken = state.activeUsers.some(u => u.name.toLowerCase() === nameLower) ||
             state.pendingRequests.some(r => r.name.toLowerCase() === nameLower);
 
         if (isNameTaken) {
-            // Rollback whitelist if name is taken
-            if (state.accessConfig.mode === 'WHITELIST') {
-                const codeObj = state.accessConfig.whitelist.find(c => c.code === entryCode);
-                if (codeObj) { codeObj.used = false; codeObj.playerName = ""; }
-            }
             return socket.emit('status_update', { status: 'rejected', reason: "ERROR_NAME_TAKEN" });
+        }
+
+        // --- SUCCESS: COMMIT JOIN ---
+
+        // If we are in Whitelist mode, officially mark the code as consumed
+        if (state.accessConfig.mode === 'WHITELIST') {
+            const codeObj = state.accessConfig.whitelist.find(c => c.code === entryCode);
+            if (codeObj) {
+                codeObj.used = true;
+                codeObj.playerName = rawName;
+            }
         }
 
         const userToken = crypto.randomBytes(16).toString('hex');
         const req = {
             socketId: socket.id,
-            name: data.name.trim(),
+            name: rawName,
             token: userToken,
             connected: true,
             proposals: [],
-            entryCode: entryCode // Track which code was used
+            entryCode: entryCode
         };
 
         state.pendingRequests.push(req);
@@ -341,7 +350,7 @@ io.on('connection', (socket) => {
 
         socket.emit('status_update', { status: 'pending', token: userToken });
         io.to('admin_room').emit('admin_new_request', req);
-        refreshAdminLists(); // Refresh to show whitelist code as "used" in Admin
+        refreshAdminLists();
     });
 
     socket.on('disconnect', () => {

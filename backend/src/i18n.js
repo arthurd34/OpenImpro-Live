@@ -3,7 +3,7 @@ const translations = {
         // --- CONNECTION SCENE ---
         CONN_WELCOME_TITLE: "Bienvenue !",
         CONN_NOT_STARTED_MSG: "Aucun spectacle en cours pour le moment. Restez à l'écoute, les connexions peuvent ouvrir d'un instant à l'autre !",
-        CONN_JOIN_TITLE: "Rejoindre le spectacle",
+        CONN_JOIN_TITLE: "Rejoindre le spectacle {{showName}}",
         CONN_INPUT_PLACEHOLDER: "Votre Nom, équipe ou n° de table",
         CONN_BTN_JOIN: "Rejoindre",
         CONN_PENDING_TITLE: "Demande envoyée !",
@@ -36,6 +36,7 @@ const translations = {
         ERROR_SHOW_NOT_STARTED: "Le spectacle n'est pas encore ouvert au public.",
         ERROR_INVALID_CODE: "Code d'accès invalide.",
         ERROR_CODE_ALREADY_USED: "Ce code a déjà été utilisé.",
+        ERROR_NAME_TOO_LONG: "Le nom est trop long, maximum {{max}} caractères autorisés.",
         SHOW_NOT_STARTED: "Spectacle en attente...",
 
         // --- ADMIN PANEL ---
@@ -123,7 +124,7 @@ const translations = {
         // --- CONNECTION SCENE ---
         CONN_WELCOME_TITLE: "Welcome!",
         CONN_NOT_STARTED_MSG: "No show currently running. Stay tuned, connections may open any moment now!",
-        CONN_JOIN_TITLE: "Join the show",
+        CONN_JOIN_TITLE: "Join the show {{showName}}",
         CONN_INPUT_PLACEHOLDER: "Your Name, team or table number",
         CONN_BTN_JOIN: "Join",
         CONN_PENDING_TITLE: "Request sent!",
@@ -156,6 +157,7 @@ const translations = {
         ERROR_SHOW_NOT_STARTED: "The show is not open to the public yet.",
         ERROR_INVALID_CODE: "Invalid access code.",
         ERROR_CODE_ALREADY_USED: "This code has already been used.",
+        ERROR_NAME_TOO_LONG: "Name is too long, maximum {{max}} characters allowed.",
         SHOW_NOT_STARTED: "Show starting soon...",
 
         // --- ADMIN PANEL ---

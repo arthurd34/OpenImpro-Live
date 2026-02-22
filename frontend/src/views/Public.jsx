@@ -89,8 +89,12 @@ const PublicView = () => {
                 if (data.name) setName(data.name);
                 setMessage('');
             } else {
-                setMessage(data.reason || '');
-                // Handle various disconnection reasons
+                if (data.transData) {
+                    setMessage({ key: data.reason, data: data.transData });
+                } else {
+                    setMessage(data.reason || '');
+                }
+
                 if (['rejected', 'kicked', 'session_expired'].includes(data.status)) {
                     localStorage.removeItem('player_name');
                     localStorage.removeItem('player_token');
@@ -139,13 +143,14 @@ const PublicView = () => {
                     <ConnectionScene
                         name={name}
                         setName={setName}
-                        entryCode={entryCode} // Pass to input
-                        setEntryCode={setEntryCode} // Pass to input
+                        entryCode={entryCode}
+                        setEntryCode={setEntryCode}
                         handleJoin={handleJoin}
                         status={status}
                         message={message}
                         ui={ui}
                         isLive={gameState?.isLive}
+                        showName={gameState?.showName}
                     />
                 </div>
                 <Footer version={gameState?.version} ui={ui} />
