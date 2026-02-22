@@ -1,101 +1,52 @@
 # OpenImpro Live (Beta V1)
 
-OpenImpro Live is an open-source platform designed to connect the audience to live improvisational performances through real-time interactive modes, fully moderated by the stage team.
+OpenImpro Live is an open-source platform designed to bridge the gap between the audience and the stage during live improvisational performances. It enables real-time interaction, fully moderated by the production team.
 
 ---
 
-## Version Francaise
-
-OpenImpro Live est une plateforme open-source qui permet de connecter le public a des spectacles d'improvisation theatrale grace a des modes d'interaction en temps reel, entierement moderes par l'equipe de scene.
-
----
-
-## What is OpenImpro Live?
-
-OpenImpro Live allows an audience to:
-* Join a live performance using a local network IP.
-* Choose a display name.
-* Submit proposals or proposals in real time.
-
-All audience interactions are:
-* Collected live via WebSockets.
-* Filtered and moderated by an admin.
-* Displayed on the stage screen only after validation.
+## Version Française
+OpenImpro Live est une plateforme open-source qui connecte le public aux spectacles d'improvisation théâtrale via des interactions en temps réel, entièrement modérées par la régie.
 
 ---
 
-## Features (V1 Beta)
-
-* Moderation-first design: Nothing is displayed without admin approval.
-* Real-time communication: Powered by Socket.io.
-* Session recovery: Automatic reconnection for users if the browser is closed.
-* Duplicate name protection: Prevents two users from using the same identity.
-* Live Tools: Mark winners, delete individual proposals, or clear history.
-* Timestamps: Precision tracking of every audience submission.
-
----
-
-## Applications
-
-The project is composed of four main components:
-1. Public App: Mobile interface for the audience.
-2. Admin App: Control panel for moderation and show management.
-3. Screen App: Full-screen display for the stage projector.
-4. Server: Node.js backend handling logic and real-time events.
-
----
-
-## Installation and Quick Start
-
-### Prerequisites
-* Docker and Docker Compose installed.
-
-### Setup
-1. Clone the repository.
-2. Create a .env file in the /backend folder:
-   PORT=3000
-   ADMIN_PASSWORD=your_secure_password
-3. Build and launch the containers:
-   docker-compose up --build
-
-### Access
-* Public Interface: http://[YOUR_PC_IP]:5173
-* Admin Interface: http://[YOUR_PC_IP]:5173/admin
-* Screen Display: http://[YOUR_PC_IP]:5173/screen
-
----
-
-## Interaction Modes
-
-OpenImpro Live provides interaction modes that can be combined and orchestrated live:
-* Waiting Mode: Displays the main title or logo.
-* Proposal Mode: Allows the audience to submit text (proposals, constraints, blind test proposals).
+## Key Features
+* **Moderation-First:** No audience content reaches the screen without admin approval.
+* **Real-Time Interaction:** Powered by Socket.io for near-zero latency.
+* **Multi-View Architecture:** Dedicated interfaces for the Public (mobile), Admin (tablet/PC), and Stage Screen (projector).
+* **Session Resilience:** Automatic reconnection and state recovery.
+* **Security:** Admin access protected by encrypted tokens and password.
+* **Persistence:** Local SQLite database to save the show state.
 
 ---
 
 ## Repository Structure
-
-openimpro-live/
-|-- backend/       # Node.js Server (API & Socket.io)
-|-- frontend/      # React Vite App (Public, Admin, Screen views)
-|-- docker-compose.yml
-|-- LICENSE
-|-- README.md
+* **`/backend`**: Node.js server handling business logic, SQLite persistence, and WebSockets.
+* **`/frontend`**: React (Vite) application containing all three views (Public, Admin, Screen).
+* **`docker-compose.yml`**: Main orchestration file.
 
 ---
 
-## License
+## Installation & Quick Start
 
-Copyright (c) 2026 [Your Name / Group Name]
+### 1. Prerequisites
+* [Docker](https://www.docker.com/get-started) and **Docker Compose** installed.
 
-This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0).
+### 2. Configuration
+The application requires environment variables to run. A template is provided in the backend folder.
 
-* Non-Commercial: You may not use this material for commercial purposes.
-* Attribution: You must give appropriate credit.
-* ShareAlike: If you remix, transform, or build upon the material, you must distribute your contributions under the same license.
+1. Navigate to the backend folder: `cd backend`
+2. Copy the example file: `cp .env.example .env`
+3. Edit the `.env` file with your own settings (especially `ADMIN_PASSWORD` and `SECRET_TOKEN`).
 
-Full legal text is available in the LICENSE file.
+**Key variables in `.env`:**
+* `PORT`: The internal port for the server (default 3000).
+* `ADMIN_PASSWORD`: The password required to access the `/admin` dashboard.
+* `SECRET_TOKEN`: A unique string used to sign security tokens.
+* `CORS_ORIGIN`: Set this to your frontend URL (e.g., `http://localhost:5173` in dev).
 
----
+### 3. Running the Application
 
-OpenImpro Live - Connect the audience to the stage, live.
+#### 🛠 Development Mode (Hot Reload enabled)
+Best for testing features or customizing the code.
+```bash
+docker-compose up --build
