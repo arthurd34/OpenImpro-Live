@@ -39,7 +39,7 @@ const AdminView = () => {
 
 
     useEffect(() => {
-        console.log("URL IS :", import.meta.env.VITE_BACKEND_URL);
+        alert("URL IS :"+ import.meta.env.VITE_BACKEND_URL);
     }, []);
 
     useEffect(() => {
