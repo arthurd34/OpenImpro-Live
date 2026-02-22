@@ -8,10 +8,10 @@ import ProposalScene from '../components/scenes/ProposalScene';
 import WaitingScene from '../components/scenes/WaitingScene';
 import Footer from '../components/Footer';
 
-const protocol = window.location.protocol;
-const hostname = window.location.hostname;
-// Connect to the backend socket server
-const socket = io(`${protocol}//${hostname}:3000`);
+const socketUrl = import.meta.env.VITE_BACKEND_URL;
+const socket = io(socketUrl, {
+    transports: ["websocket"],
+});
 
 const PublicView = () => {
     const [name, setName] = useState('');

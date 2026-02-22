@@ -3,11 +3,11 @@ import io from 'socket.io-client';
 import SceneControl from '../components/admin/SceneControl';
 import { t } from '../utils/i18n';
 import Footer from "../components/Footer.jsx";
-const protocol = window.location.protocol;
-const hostname = window.location.hostname;
 
-// Connect to the backend socket
-const socket = io(`${protocol}//${hostname}:3000`);
+const socketUrl = import.meta.env.VITE_BACKEND_URL;
+const socket = io(socketUrl, {
+    transports: ["websocket"],
+});
 
 const AdminView = () => {
     // --- AUTH & SESSION STATE ---
@@ -126,7 +126,7 @@ const AdminView = () => {
         formData.append('showZip', file);
 
         try {
-            const response = await fetch(`${protocol}//${hostname}:3000/admin/upload-show`, {
+            const response = await fetch(`${socketUrl}/admin/upload-show`, {
                 method: 'POST',
                 body: formData,
                 headers: { 'x-admin-token': token }

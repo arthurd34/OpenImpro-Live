@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 
-const protocol = window.location.protocol;
-const hostname = window.location.hostname;
-
-const socket = io(`http://${protocol}//${hostname}:3000`);
+const socketUrl = import.meta.env.VITE_BACKEND_URL;
+const socket = io(socketUrl, {
+    transports: ["websocket"],
+});
 
 const ScreenView = () => {
     const [gameState, setGameState] = useState(null);
