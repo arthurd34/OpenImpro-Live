@@ -11,6 +11,8 @@ import Footer from '../components/Footer';
 import ConnectionErrorOverlay from '../components/overlays/ConnectionErrorOverlay';
 import LatencyIndicator from '../components/LatencyIndicator';
 import WakeLockToggle from '../components/WakeLockToggle';
+import { preloadAssets } from '../utils/AssetLoader';
+import LoadingScreen from '../components/LoadingScreen';
 
 // Ensure the CSS provided below is in your stylesheet
 import './PublicView.css';
@@ -25,6 +27,9 @@ const PublicView = () => {
     const [status, setStatus] = useState('idle');
     const [message, setMessage] = useState('');
     const [gameState, setGameState] = useState(null);
+    const [assetsLoaded, setAssetsLoaded] = useState(false);
+    const [loadProgress, setLoadProgress] = useState(0);
+    const [loadError, setLoadError] = useState(false);
     const [history, setHistory] = useState([]);
     const [isConnected, setIsConnected] = useState(socket.connected);
     const [countdown, setCountdown] = useState(15);
@@ -68,6 +73,33 @@ const PublicView = () => {
             socket.off('pong_response');
         };
     }, []);
+
+    useEffect(() => {
+        if (gameState?.assets?.length > 0 && !assetsLoaded) {
+            const basePath = import.meta.env.VITE_BACKEND_URL + gameState.showPath;
+
+            preloadAssets(gameState.assets, basePath, (progress, assetId) => {
+                setLoadProgress(progress);
+                // On pourrait stocker le nom de l'asset ici si on veut l'afficher
+            })
+                .then(() => {
+                    setAssetsLoaded(true);
+                })
+                .catch(err => {
+                    console.error("Certains assets n'ont pas pu être chargés après 3 essais.");
+                    setLoadError(true);
+                });
+        }
+    }, [gameState?.activeShowId]);
+
+    useEffect(() => {
+        if (gameState?.theme) {
+            const theme = gameState.theme;
+            if (theme.primaryColor) document.documentElement.style.setProperty('--primary-color', theme.primaryColor);
+            if (theme.backgroundColor) document.body.style.backgroundColor = theme.backgroundColor;
+            document.title = gameState.showName || "Open Stage Live";
+        }
+    }, [gameState?.theme]);
 
     // --- EFFECT: DETECT SCORE CHANGE & TRIGGER ANIMATION ---
     useEffect(() => {
@@ -193,6 +225,16 @@ const PublicView = () => {
             isReconnect: false
         });
     };
+
+    if (gameState && !assetsLoaded) {
+        return (
+            <LoadingScreen
+                progress={loadProgress}
+                error={loadError}
+                onSkip={() => setAssetsLoaded(true)}
+            />
+        );
+    }
 
     // --- RENDER: LOGIN / PENDING ---
     if (status !== 'approved') {

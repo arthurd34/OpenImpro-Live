@@ -28,6 +28,8 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "x-admin-token"]
 }));
 
+app.use('/shows', express.static(path.join(__dirname, '../shows')));
+
 app.use(fileUpload());
 
 // --- INITIAL STATE & PERSISTENCE ---
@@ -113,7 +115,10 @@ const getSyncData = () => {
         hasPoints: showConfig.hasPoints || false,
         scores: state.scores,
         isScoreVisible: state.isScoreVisible,
-        allProposals: state.allProposals
+        allProposals: state.allProposals,
+        theme: showConfig.theme || {},
+        assets: showConfig.assets || [],
+        showPath: `/shows/${state.activeShowId}/`
     };
 
     if (!state.isLive) {
