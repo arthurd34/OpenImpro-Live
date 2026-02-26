@@ -8,11 +8,28 @@ const socket = io(socketUrl, { transports: ["websocket"] });
 
 const ScreenView = () => {
     const [gameState, setGameState] = useState(null);
+    const [manualWinner, setManualWinner] = useState(null);
 
     useEffect(() => {
         socket.on('sync_state', (state) => setGameState(state));
-        return () => socket.off('sync_state');
+
+        // [comment] Listen for immediate display events (Presets or Approved Winners)
+        socket.on('show_on_screen', (proposal) => {
+            setManualWinner(proposal);
+            // [comment] Auto-clear manual winner after 15 seconds
+            setTimeout(() => setManualWinner(null), 15000);
+        });
+
+        return () => {
+            socket.off('sync_state');
+            socket.off('show_on_screen');
+        };
     }, []);
+
+    // [comment] Reset manual winner if admin changes the scene
+    useEffect(() => {
+        setManualWinner(null);
+    }, [gameState?.currentIndex]);
 
     if (!gameState) return (
         <div style={{ backgroundColor: '#000', color: '#fff', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -39,15 +56,18 @@ const ScreenView = () => {
             {isLeaderboardScene ? (
                 /* The Leaderboard is now triggered by the scene navigation */
                 <LeaderboardScreen scores={gameState.scores} />
+            ) : manualWinner ? (
+                /* [comment] Manual winner (Presets) take absolute priority when triggered */
+                <ProposalsScreen proposals={[manualWinner]} />
             ) : displayedProposals.length > 0 ? (
                 /* Proposals take priority if no leaderboard scene is active */
                 <ProposalsScreen proposals={displayedProposals} />
             ) : (
-                /* --- DEFAULT SCENE (LOGO OR TITLE) --- */
+                /* --- DEFAULT SCENE --- */
                 <div style={{ textAlign: 'center', width: '100%', animation: 'fadeIn 1s ease' }}>
                     {gameState.currentScene?.type === 'WAITING' ? (
                         <h1 style={{ fontSize: '10rem', color: '#00d4ff', textShadow: '0 0 60px rgba(0,212,255,0.6)' }}>
-                            OPEN STAGE LIVE
+                            {gameState.currentScene?.params?.titleDisplay === "SHOW_NOT_STARTED" ? "OPEN STAGE LIVE" : (gameState.currentScene?.params?.titleDisplay || "OPEN STAGE LIVE")}
                         </h1>
                     ) : (
                         <div style={{ padding: '0 50px' }}>

@@ -300,6 +300,10 @@ io.on('connection', (socket) => {
         sceneManager.handleEvent(socket, io, 'send_proposal', data, getContext());
     });
 
+    socket.on('admin_set_proposal_winner', adminAction((data) => {
+        sceneManager.handleEvent(socket, io, 'admin_set_proposal_winner', data, getContext());
+    }));
+
     socket.on('admin_display_proposal', adminAction((data) => {
         const { id, value } = data;
         state.allProposals = state.allProposals.map(p => ({

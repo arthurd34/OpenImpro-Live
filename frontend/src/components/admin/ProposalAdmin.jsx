@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { t } from '../../utils/i18n';
 
-const ProposalAdmin = ({ ui, proposals, socket, token }) => {
+const ProposalAdmin = ({ ui, proposals, socket, token, currentScene }) => {
     const [customText, setCustomText] = useState('');
+    const presets = currentScene?.params?.presets || [];
 
     const handleClearAll = () => {
         if (window.confirm(t(ui, 'CONFIRM_CLEAR_PROPOSALS'))) {
@@ -30,6 +31,13 @@ const ProposalAdmin = ({ ui, proposals, socket, token }) => {
         });
     };
 
+    const handleSendPreset = (text) => {
+        // [comment] Confirmation dialog before pushing a preset to the main screen
+        if (window.confirm(`Voulez-vous diffuser "${text}" à l'écran ?`)) {
+            socket.emit('admin_set_proposal_winner', { token, text });
+        }
+    };
+
     const handleSendCustom = (e) => {
         e.preventDefault();
         if (!customText.trim()) return;
@@ -53,12 +61,39 @@ const ProposalAdmin = ({ ui, proposals, socket, token }) => {
                 </button>
             </div>
 
+            {/* --- PRESETS SECTION --- */}
+            {presets.length > 0 && (
+                <div style={{
+                    marginBottom: '20px',
+                    padding: '15px',
+                    background: 'rgba(255,255,255,0.05)',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                }}>
+                    <small style={{ display: 'block', marginBottom: '10px', opacity: 0.5, fontWeight: 'bold', textTransform: 'uppercase' }}>
+                        Presets :
+                    </small>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {presets.map((p, i) => (
+                            <button
+                                key={`preset-${i}`}
+                                className="btn-secondary"
+                                style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                                onClick={() => handleSendPreset(p)}
+                            >
+                                {p}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <form onSubmit={handleSendCustom} style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 <input
                     type="text"
                     value={customText}
                     onChange={(e) => setCustomText(e.target.value)}
-                    placeholder="Inscrire une réponse manuelle..."
+                    placeholder="Réponse manuelle..."
                     style={{ flex: 1, padding: '8px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(0,0,0,0.2)', color: 'white' }}
                 />
                 <button type="submit" className="btn-primary" style={{ padding: '8px 15px' }}>
@@ -108,7 +143,7 @@ const ProposalAdmin = ({ ui, proposals, socket, token }) => {
                             </button>
 
                             <button
-                                onClick={() => handleToggleWinner(ans)}
+                                onClick={() => handleSetWinner(ans)}
                                 style={{
                                     padding: '6px 12px',
                                     fontSize: '0.75rem',

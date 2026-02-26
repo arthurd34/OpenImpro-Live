@@ -24,6 +24,7 @@ const SceneControl = ({ currentScene, proposals, socket, token, emitAdmin, ui, i
                         token={token}
                         emitAdmin={emitAdmin}
                         ui={ui}
+                        currentScene={currentScene}
                     />
                 );
 
