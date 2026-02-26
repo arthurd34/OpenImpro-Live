@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
+const {Server} = require('socket.io');
 const crypto = require('crypto');
 const fs = require('fs-extra');
 const path = require('path');
@@ -19,7 +19,7 @@ const VERSION = "1.0.0-beta";
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, {cors: {origin: "*"}});
 
 // --- CONFIGURATION CORS ---
 app.use(cors({
@@ -52,7 +52,7 @@ let state = savedState || {
 
 if (!state.adminTokens) state.adminTokens = [];
 if (!state.accessConfig) {
-    state.accessConfig = { mode: 'PUBLIC', publicCode: '1234', whitelist: [] };
+    state.accessConfig = {mode: 'PUBLIC', publicCode: '1234', whitelist: []};
 }
 if (!state.scores) state.scores = {};
 if (state.isScoreVisible === undefined) state.isScoreVisible = false;
@@ -61,7 +61,7 @@ let showConfig = {
     name: "No show loaded",
     lang: "fr",
     hasPoints: false,
-    scenes: [{ id: 'OFFLINE', title: "Offline", type: "WAITING", params: {} }]
+    scenes: [{id: 'OFFLINE', title: "Offline", type: "WAITING", params: {}}]
 };
 
 const persist = () => dbManager.saveState(state);
@@ -120,7 +120,7 @@ const getSyncData = () => {
         return {
             ...baseData,
             accessConfig: state.accessConfig,
-            currentScene: { id: 'OFFLINE', type: 'WAITING', params: { titleDisplay: "SHOW_NOT_STARTED" } }
+            currentScene: {id: 'OFFLINE', type: 'WAITING', params: {titleDisplay: "SHOW_NOT_STARTED"}}
         };
     }
 
@@ -147,10 +147,22 @@ const getContext = () => ({
     ...state,
     refreshAdminLists,
     getSyncData,
-    setAllProposals: (val) => { state.allProposals = val; persist(); },
-    setActiveUsers: (val) => { state.activeUsers = val; persist(); },
-    setPendingRequests: (val) => { state.pendingRequests = val; persist(); },
-    setAccessConfig: (val) => { state.accessConfig = val; persist(); }
+    setAllProposals: (val) => {
+        state.allProposals = val;
+        persist();
+    },
+    setActiveUsers: (val) => {
+        state.activeUsers = val;
+        persist();
+    },
+    setPendingRequests: (val) => {
+        state.pendingRequests = val;
+        persist();
+    },
+    setAccessConfig: (val) => {
+        state.accessConfig = val;
+        persist();
+    }
 });
 
 const adminAction = (callback) => (data) => {
@@ -178,10 +190,10 @@ app.post('/admin/upload-show', async (req, res) => {
         }
 
         const showId = await ShowManager.uploadShow(uploadedFile);
-        res.send({ success: true, showId });
+        res.send({success: true, showId});
     } catch (err) {
         console.error("Upload error:", err);
-        res.status(500).send({ error: err.message });
+        res.status(500).send({error: err.message});
     }
 });
 
@@ -207,7 +219,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('admin_login', (data) => {
-        const { password, token } = (typeof data === 'string') ? { password: data } : data;
+        const {password, token} = (typeof data === 'string') ? {password: data} : data;
 
         // DEBUG LOGS (À supprimer après)
         console.log("RECU:", password);
@@ -224,7 +236,7 @@ io.on('connection', (socket) => {
             persist();
 
             socket.join('admin_room');
-            socket.emit('login_success', { token: newToken });
+            socket.emit('login_success', {token: newToken});
             socket.emit('sync_state', getSyncData());
             refreshAdminLists();
             socket.emit('admin_sync_proposals', state.allProposals);
@@ -235,7 +247,7 @@ io.on('connection', (socket) => {
 
         if (token && isValidAdmin(token)) {
             socket.join('admin_room');
-            socket.emit('login_success', { token });
+            socket.emit('login_success', {token});
             socket.emit('sync_state', getSyncData());
             refreshAdminLists();
             socket.emit('admin_sync_proposals', state.allProposals);
@@ -253,7 +265,7 @@ io.on('connection', (socket) => {
     // --- SCORING ACTIONS ---
     socket.on('admin_add_points', adminAction((data) => {
         if (!showConfig.hasPoints) return;
-        const { playerName, amount } = data;
+        const {playerName, amount} = data;
         if (!playerName) return;
         if (!state.scores[playerName]) state.scores[playerName] = 0;
         state.scores[playerName] += amount;
@@ -305,7 +317,7 @@ io.on('connection', (socket) => {
     }));
 
     socket.on('admin_display_proposal', adminAction((data) => {
-        const { id, value } = data;
+        const {id, value} = data;
         state.allProposals = state.allProposals.map(p => ({
             ...p,
             isDisplayed: p.id === id ? value : p.isDisplayed
@@ -316,7 +328,7 @@ io.on('connection', (socket) => {
     }));
 
     socket.on('admin_set_winner', adminAction((data) => {
-        const { id, value } = data;
+        const {id, value} = data;
         state.allProposals = state.allProposals.map(p => ({
             ...p,
             isWinner: p.id === id ? value : p.isWinner
@@ -394,56 +406,113 @@ io.on('connection', (socket) => {
         io.emit('sync_state', getSyncData());
     }));
 
-    // --- JOIN & DISCONNECT ---
-
+    // --- JOIN & DISCONNECT ---=
     socket.on('join_request', (data) => {
         if (!state.isLive && !data.isReconnect) {
-            return socket.emit('status_update', { status: 'rejected', reason: "ERROR_SHOW_NOT_STARTED" });
+            return socket.emit('status_update', {status: 'rejected', reason: "ERROR_SHOW_NOT_STARTED"});
         }
+
+        // --- RECONNECTION LOGIC ---
         if (data.isReconnect && data.token) {
             const existingUser = state.activeUsers.find(u => u.token === data.token);
             if (existingUser) {
                 existingUser.socketId = socket.id;
                 existingUser.connected = true;
                 persist();
-                socket.emit('status_update', { status: 'approved', name: existingUser.name, token: existingUser.token });
+                socket.emit('status_update', {status: 'approved', name: existingUser.name, token: existingUser.token});
                 socket.emit('sync_state', getSyncData());
                 socket.emit('user_history_update', existingUser.proposals || []);
                 refreshAdminLists();
                 return;
             } else {
-                return socket.emit('status_update', { status: 'session_expired', reason: "ERROR_SESSION_EXPIRED" });
+                return socket.emit('status_update', {status: 'session_expired', reason: "ERROR_SESSION_EXPIRED"});
             }
         }
+
         if (!state.allowNewJoins) {
-            return socket.emit('status_update', { status: 'rejected', reason: "ERROR_JOINS_CLOSED" });
+            return socket.emit('status_update', {status: 'rejected', reason: "ERROR_JOINS_CLOSED"});
         }
+
         const rawName = data.name ? data.name.trim() : "";
         if (!rawName) return;
         if (rawName.length > 25) {
-            return socket.emit('status_update', { status: 'rejected', reason: "ERROR_NAME_TOO_LONG", transData: { max: 25 } });
+            return socket.emit('status_update', {
+                status: 'rejected',
+                reason: "ERROR_NAME_TOO_LONG",
+                transData: {max: 25}
+            });
         }
+
         const entryCode = data.entryCode ? data.entryCode.trim().toUpperCase() : "";
+
+        // --- ACCESS MODE: PUBLIC ---
         if (state.accessConfig.mode === 'PUBLIC') {
             if (entryCode !== state.accessConfig.publicCode.toUpperCase()) {
-                return socket.emit('status_update', { status: 'rejected', reason: "ERROR_INVALID_CODE" });
-            }
-        } else if (state.accessConfig.mode === 'WHITELIST') {
-            const codeObj = state.accessConfig.whitelist.find(c => c.code === entryCode);
-            if (!codeObj || codeObj.used) {
-                return socket.emit('status_update', { status: 'rejected', reason: !codeObj ? "ERROR_INVALID_CODE" : "ERROR_CODE_ALREADY_USED" });
+                return socket.emit('status_update', {status: 'rejected', reason: "ERROR_INVALID_CODE"});
             }
         }
+        // --- ACCESS MODE: WHITELIST (UPDATED LOGIC) ---
+        else if (state.accessConfig.mode === 'WHITELIST') {
+            const codeObj = state.accessConfig.whitelist.find(c => c.code === entryCode);
+
+            if (!codeObj) {
+                return socket.emit('status_update', { status: 'rejected', reason: "ERROR_INVALID_CODE" });
+            }
+
+            if (codeObj.used) {
+                // [comment] Find the user associated with this code
+                const occupant = state.activeUsers.find(u => u.entryCode === entryCode);
+
+                if (occupant) {
+                    if (occupant.connected) {
+                        // [comment] If still online, we block the access
+                        return socket.emit('status_update', { status: 'rejected', reason: "ERROR_CODE_ALREADY_USED" });
+                    } else {
+                        // [comment] HE IS DISCONNECTED: We perform a "takeover"
+                        // We generate a new token and transfer data (scores, etc.)
+                        const userToken = crypto.randomBytes(16).toString('hex');
+
+                        // [comment] Update the occupant's data with new socket and token
+                        occupant.socketId = socket.id;
+                        occupant.token = userToken;
+                        occupant.connected = true;
+                        // Note: occupant.name and occupant.score remain unchanged
+
+                        persist();
+
+                        // [comment] Immediate approval (no need to go through pending)
+                        socket.emit('status_update', {
+                            status: 'approved',
+                            name: occupant.name,
+                            token: userToken
+                        });
+
+                        socket.emit('sync_state', getSyncData());
+                        socket.emit('user_history_update', occupant.proposals || []);
+                        refreshAdminLists();
+                        return;
+                    }
+                }
+            }
+        }
+
         const nameLower = rawName.toLowerCase();
         const isNameTaken = state.activeUsers.some(u => u.name.toLowerCase() === nameLower) ||
             state.pendingRequests.some(r => r.name.toLowerCase() === nameLower);
+
         if (isNameTaken) {
-            return socket.emit('status_update', { status: 'rejected', reason: "ERROR_NAME_TAKEN" });
+            return socket.emit('status_update', {status: 'rejected', reason: "ERROR_NAME_TAKEN"});
         }
+
+        // Mark code as used if not already
         if (state.accessConfig.mode === 'WHITELIST') {
             const codeObj = state.accessConfig.whitelist.find(c => c.code === entryCode);
-            if (codeObj) { codeObj.used = true; codeObj.playerName = rawName; }
+            if (codeObj) {
+                codeObj.used = true;
+                codeObj.playerName = rawName;
+            }
         }
+
         const userToken = crypto.randomBytes(16).toString('hex');
         const req = {
             socketId: socket.id,
@@ -454,16 +523,20 @@ io.on('connection', (socket) => {
             entryCode: entryCode,
             score: 0
         };
+
         state.pendingRequests.push(req);
         persist();
-        socket.emit('status_update', { status: 'pending', token: userToken });
+        socket.emit('status_update', {status: 'pending', token: userToken});
         io.to('admin_room').emit('admin_new_request', req);
         refreshAdminLists();
     });
 
     socket.on('disconnect', () => {
         const user = state.activeUsers.find(u => u.socketId === socket.id);
-        if (user) { user.connected = false; persist(); }
+        if (user) {
+            user.connected = false;
+            persist();
+        }
         const wasPending = state.pendingRequests.some(r => r.socketId === socket.id);
         if (wasPending) {
             state.pendingRequests = state.pendingRequests.filter(r => r.socketId !== socket.id);
