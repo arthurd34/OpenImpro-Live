@@ -10,6 +10,7 @@ import Leaderboard from '../components/scenes/Leaderboard';
 import Footer from '../components/Footer';
 import ConnectionErrorOverlay from '../components/overlays/ConnectionErrorOverlay';
 import LatencyIndicator from '../components/LatencyIndicator';
+import WakeLockToggle from '../components/WakeLockToggle';
 
 // Ensure the CSS provided below is in your stylesheet
 import './PublicView.css';
@@ -254,43 +255,71 @@ const PublicView = () => {
                 )}
 
                 <div className={`card ${animateScore ? (scoreDiff > 0 ? 'score-pop-up' : 'score-pop-down') : ''}`}>
-                    {/* --- LATENCY INDICATOR (TOP LEFT OF CARD) --- */}
-                    <div style={{ position: 'absolute', top: '10px', left: '10px' }}>
-                        <LatencyIndicator ping={ping} />
-                    </div>
 
-                    <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '35px' }}>
-                            <h3 style={{ margin: 0 }}>{name}</h3>
-
-                            {/* --- SCORE BADGE --- */}
-                            {showPoints && (
-                                <div style={{ position: 'relative' }}>
-                                    <span className={`score-badge ${animateScore ? 'animate' : ''}`}>
-                                        {myScore} pts
-                                    </span>
-
-                                    {/* FLOATING TEXT: Displays +X or -X based on change */}
-                                    {scoreDiff !== null && (
-                                        <span className={`score-floating-text ${scoreDiff > 0 ? 'positive' : 'negative'}`}>
-                                            {scoreDiff > 0 ? `+${scoreDiff}` : scoreDiff}
-                                        </span>
-                                    )}
-                                </div>
-                            )}
+                    {/* --- SYSTEM TOOLBAR (Top Bar inside Card) --- */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '0',
+                        right: '0',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px 12px',
+                        background: 'rgba(0,0,0,0.05)', // Subtle background for the toolbar
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                        borderTopLeftRadius: '12px',
+                        borderTopRightRadius: '12px'
+                    }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                            <LatencyIndicator ping={ping} />
+                            <div style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.1)' }} />
+                            <WakeLockToggle ui={ui} />
                         </div>
+
                         <div className="status-dot" style={{
                             background: isConnected ? '#2ecc71' : '#e74c3c',
-                            width: 10, height: 10, borderRadius: '50%'
+                            width: 8, height: 8, borderRadius: '50%',
+                            boxShadow: isConnected ? '0 0 5px #2ecc71' : '0 0 5px #e74c3c'
                         }}></div>
+                    </div>
+
+                    {/* --- HEADER (User Info & Score) --- */}
+                    <header style={{
+                        marginTop: '35px', // Push down to clear the toolbar
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: '8px',
+                        paddingBottom: '10px'
+                    }}>
+                        <h3 style={{ margin: 0, opacity: 0.9, letterSpacing: '0.5px' }}>{name}</h3>
+
+                        {showPoints && (
+                            <div style={{ position: 'relative' }}>
+                                <span className={`score-badge ${animateScore ? 'animate' : ''}`} style={{ fontSize: '1.1rem', padding: '5px 15px' }}>
+                                    {myScore} <small>pts</small>
+                                </span>
+
+                                {scoreDiff !== null && (
+                                    <span className={`score-floating-text ${scoreDiff > 0 ? 'positive' : 'negative'}`}>
+                                        {scoreDiff > 0 ? `+${scoreDiff}` : scoreDiff}
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </header>
-                    <hr />
+
+                    <hr style={{ opacity: 0.1, margin: '0 0 20px 0' }} />
+
+                    {/* --- SCENE CONTENT --- */}
                     {(() => {
                         switch (sceneType) {
                             case 'PROPOSAL': return <ProposalScene {...sceneProps} />;
                             case 'WAITING':  return <WaitingScene {...sceneProps} />;
                             default: return (
-                                <div style={{textAlign:'center', padding:'20px'}}>
+                                <div style={{textAlign:'center', padding:'40px 20px', opacity: 0.5}}>
+                                    <div className="spinner" style={{ margin: '0 auto 15px' }}></div>
                                     {t(ui, 'WAITING_FOR_START')}
                                 </div>
                             );

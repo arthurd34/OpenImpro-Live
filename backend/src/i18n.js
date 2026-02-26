@@ -41,6 +41,11 @@ const translations = {
         ERROR_SHOW_ENDED: "Le spectacle est terminé, merci d'être venu !",
         SHOW_NOT_STARTED: "Spectacle en attente...",
 
+        // --- MONITORING (NEW) ---
+        LATENCY_UNSTABLE: "CONNEXION INSTABLE",
+        WAKE_LOCK_ON: "TOUJOURS ALLUMÉ",
+        WAKE_LOCK_OFF: "VEILLE OK",
+
         // --- ADMIN PANEL ---
         ERROR_INVALID_CREDENTIALS: "Identifiants invalides.",
         ADMIN_LOGIN_TITLE: "Accès Régie",
@@ -171,6 +176,11 @@ const translations = {
         ERROR_NAME_TOO_LONG: "Name is too long, maximum {{max}} characters allowed.",
         ERROR_SHOW_ENDED: "The show has ended, thank you for coming!",
         SHOW_NOT_STARTED: "Show starting soon...",
+
+        // --- MONITORING (NEW) ---
+        LATENCY_UNSTABLE: "UNSTABLE CONNECTION",
+        WAKE_LOCK_ON: "ALWAYS ON",
+        WAKE_LOCK_OFF: "SLEEP OK",
 
         // --- ADMIN PANEL ---
         ERROR_INVALID_CREDENTIALS: "Invalid credentials.",

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
+import { t } from '../utils/i18n';
 
 /**
  * LatencyIndicator Component
  * Displays network strength bars based on ping ms
  */
-const LatencyIndicator = ({ ping }) => {
+const LatencyIndicator = ({ ping, ui }) => {
     const [showMs, setShowMs] = useState(false);
 
-    // Logic to determine signal strength (0 to 4 bars)
+    // [comment] Logic to determine signal strength (0 to 4 bars)
     const getBars = (ms) => {
         if (ms < 0) return 0;
         if (ms < 50) return 4;   // Excellent
@@ -41,7 +42,8 @@ const LatencyIndicator = ({ ping }) => {
                 {showMs && (
                     <span style={{
                         marginLeft: '8px', fontSize: '0.7rem', background: 'black',
-                        padding: '2px 5px', borderRadius: '4px', position: 'absolute', left: '25px'
+                        padding: '2px 5px', borderRadius: '4px', position: 'absolute', left: '25px',
+                        zIndex: 10
                     }}>
                         {ping}ms
                     </span>
@@ -53,7 +55,7 @@ const LatencyIndicator = ({ ping }) => {
                     fontSize: '0.6rem', color: '#ef4444', fontWeight: 'bold',
                     animation: 'fadeIn 0.5s infinite alternate'
                 }}>
-                    ⚠️ CONNEXION INSTABLE
+                    ⚠️ {t(ui, 'LATENCY_UNSTABLE')}
                 </div>
             )}
         </div>
