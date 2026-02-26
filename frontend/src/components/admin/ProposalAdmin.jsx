@@ -146,7 +146,7 @@ const ProposalAdmin = ({ ui, proposals, socket, token, currentScene }) => {
                             </button>
 
                             <button
-                                onClick={() => handleSetWinner(ans)}
+                                onClick={() => handleToggleWinner(ans)}
                                 style={{
                                     padding: '6px 12px',
                                     fontSize: '0.75rem',
