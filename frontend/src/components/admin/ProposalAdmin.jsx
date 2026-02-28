@@ -1,10 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { t } from '../../utils/i18n';
 
 const ProposalAdmin = ({ ui, proposals, socket, token, currentScene }) => {
     const [customText, setCustomText] = useState('');
     const [activePreset, setActivePreset] = useState(null);
     const presets = currentScene?.params?.presets || [];
+
+    useEffect(() => {
+        socket.on('admin_preset_active', (presetText) => {
+            console.log("Preset synchronisé :", presetText);
+            setActivePreset(presetText);
+        });
+
+        return () => {
+            socket.off('admin_preset_active');
+        };
+    }, [socket]);
 
     const handleClearAll = () => {
         if (window.confirm(t(ui, 'CONFIRM_CLEAR_PROPOSALS'))) {

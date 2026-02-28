@@ -71,8 +71,10 @@ module.exports = {
                 isAdmin: true
             };
             io.emit('show_on_screen', virtualWinner);
+            io.to('admin_room').emit('admin_preset_active', data.text);
         } else {
             io.emit('show_on_screen', null);
+            io.to('admin_room').emit('admin_preset_active', null);
         }
     },
 
