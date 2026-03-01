@@ -31,6 +31,9 @@ app.use(cors({
 
 app.use(fileUpload());
 
+// --- SERVE STATIC FILES (SHOW ASSETS) ---
+app.use('/shows', express.static(path.join(__dirname, '..', 'shows')));
+
 // --- INITIAL STATE & PERSISTENCE ---
 const savedState = dbManager.loadState();
 let state = savedState || {
@@ -113,7 +116,9 @@ const getSyncData = () => {
         hasPoints: showConfig.hasPoints || false,
         scores: state.scores,
         isScoreVisible: state.isScoreVisible,
-        allProposals: state.allProposals
+        allProposals: state.allProposals,
+        assets: showConfig.assets || [],
+        theme: showConfig.theme || {}
     };
 
     if (!state.isLive) {

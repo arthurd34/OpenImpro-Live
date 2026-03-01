@@ -11,6 +11,8 @@ import Footer from '../components/Footer';
 import ConnectionErrorOverlay from '../components/overlays/ConnectionErrorOverlay';
 import LatencyIndicator from '../components/LatencyIndicator';
 import WakeLockToggle from '../components/WakeLockToggle';
+import { useCustomTheme } from '../utils/useCustomTheme';
+import { useAssetPreloader } from '../utils/useAssetPreloader';
 
 // Ensure the CSS provided below is in your stylesheet
 import './PublicView.css';
@@ -43,6 +45,10 @@ const PublicView = () => {
     const myScore = gameState?.scores?.[name] || 0;
     const showPoints = gameState?.hasPoints || false;
     const isScoreVisible = gameState?.isScoreVisible || false;
+
+    // --- SYSTEM HOOKS ---
+    useAssetPreloader(gameState);
+    useCustomTheme(gameState, 'mobile');
 
     // --- EFFECT: LATENCY MONITORING (PING) ---
     useEffect(() => {

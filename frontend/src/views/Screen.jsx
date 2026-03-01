@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import LeaderboardScreen from '../components/screen/LeaderboardScreen';
 import ProposalsScreen from '../components/screen/ProposalsScreen';
+import { useAssetPreloader } from '../utils/useAssetPreloader';
+import { useCustomTheme } from '../utils/useCustomTheme';
 
 const socketUrl = import.meta.env.VITE_BACKEND_URL;
 const socket = io(socketUrl, { transports: ["websocket"] });
@@ -10,10 +12,12 @@ const ScreenView = () => {
     const [gameState, setGameState] = useState(null);
     const [manualWinner, setManualWinner] = useState(null);
 
+    // --- SYSTEM HOOKS ---
+    useAssetPreloader(gameState);
+    useCustomTheme(gameState);
+
     useEffect(() => {
         socket.on('sync_state', (state) => setGameState(state));
-
-        // [comment] Listen for display events - NO TIMER ANYMORE
         socket.on('show_on_screen', (proposal) => {
             setManualWinner(proposal);
         });
@@ -28,63 +32,108 @@ const ScreenView = () => {
         setManualWinner(null);
     }, [gameState?.currentIndex]);
 
-    // [comment] Reset manual winner if admin changes the scene
-    useEffect(() => {
-        setManualWinner(null);
-    }, [gameState?.currentIndex]);
+    // [comment] Helper to get full URL of an asset by ID
+    const getAssetUrl = (assetId) => {
+        if (!gameState || !gameState.assets || !assetId) return null;
+        const asset = gameState.assets.find(a => a.id === assetId);
+        if (!asset) return null;
+        return `${import.meta.env.VITE_BACKEND_URL}/shows/${gameState.activeShowId}/${asset.url}`;
+    };
+
+    // --- CUSTOM HTML PARSER ---
+    // [comment] Replaces placeholders like {{titleDisplay}} with real values from params
+    const renderCustomHtml = (htmlString, params) => {
+        if (!htmlString) return null;
+        let finalHtml = htmlString;
+
+        Object.keys(params || {}).forEach(key => {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            finalHtml = finalHtml.replace(regex, params[key]);
+        });
+
+        return (
+            <div
+                className="custom-scene-container"
+                dangerouslySetInnerHTML={{ __html: finalHtml }}
+                style={{ width: '100%', height: '100%', position: 'relative', zIndex: 5 }}
+            />
+        );
+    };
 
     if (!gameState) return (
         <div style={{ backgroundColor: '#000', color: '#fff', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            Initializing...
+            <h1 style={{ fontSize: '4rem' }}>Loading Show...</h1>
         </div>
     );
 
-    // --- LOGIC ---
-    // 1. Check if the current scene is a Leaderboard type (auto-injected or manual)
-    const isLeaderboardScene = gameState.currentScene?.type === 'LEADERBOARD';
+    const scene = gameState.currentScene;
+    const currentBgId = scene?.uiOverrides?.backgroundAsset;
+    const backgroundUrl = getAssetUrl(currentBgId);
 
-    // 2. Filter broadcasted proposals
+    const isLeaderboardScene = scene?.type === 'LEADERBOARD';
     const displayedProposals = gameState?.allProposals?.filter(p => p.isDisplayed) || [];
+    const customHtml = scene?.uiOverrides?.customHtml;
 
     return (
-        <div style={{
-            height: '100vh', width: '100vw', display: 'flex', position: 'absolute',
-            top: 0, left: 0, flexDirection: 'column', alignItems: 'center',
-            justifyContent: 'center', backgroundColor: '#000', color: '#fff',
-            fontFamily: 'sans-serif', overflow: 'hidden', margin: 0, padding: 0
+        <div className="screen-root" style={{
+            backgroundColor: gameState?.theme?.backgroundColor || '#1a1a1a',
+            backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : 'none',
+            backgroundSize: scene?.uiOverrides?.fit || 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            position: 'absolute',
+            top: 0, left: 0,
+            color: gameState?.theme?.textColor || '#ffffff',
+            height: '100vh', width: '100vw',
+            overflow: 'hidden', display: 'flex', flexDirection: 'column'
         }}>
 
-            {/* --- SWITCHER --- */}
-            {isLeaderboardScene ? (
-                /* The Leaderboard is now triggered by the scene navigation */
-                <LeaderboardScreen scores={gameState.scores} />
-            ) : manualWinner ? (
-                /* [comment] Manual winner (Presets) take absolute priority when triggered */
-                <ProposalsScreen proposals={[manualWinner]} />
-            ) : displayedProposals.length > 0 ? (
-                /* Proposals take priority if no leaderboard scene is active */
-                <ProposalsScreen proposals={displayedProposals} />
+            {/* --- PRIORITY 1: CUSTOM HTML (User Autonomy) --- */}
+            {customHtml ? (
+                renderCustomHtml(customHtml, scene.params)
             ) : (
-                /* --- DEFAULT SCENE --- */
-                <div style={{ textAlign: 'center', width: '100%', animation: 'fadeIn 1s ease' }}>
-                    {gameState.currentScene?.type === 'WAITING' ? (
-                        <h1 style={{ fontSize: '10rem', color: '#00d4ff', textShadow: '0 0 60px rgba(0,212,255,0.6)' }}>
-                            {gameState.currentScene?.params?.titleDisplay === "SHOW_NOT_STARTED" ? "OPEN STAGE LIVE" : (gameState.currentScene?.params?.titleDisplay || "OPEN STAGE LIVE")}
-                        </h1>
+                /* --- PRIORITY 2: STANDARD REACT COMPONENTS --- */
+                <>
+                    {isLeaderboardScene ? (
+                        <LeaderboardScreen scores={gameState.scores} />
+                    ) : manualWinner ? (
+                        <ProposalsScreen proposals={[manualWinner]} />
+                    ) : displayedProposals.length > 0 ? (
+                        <ProposalsScreen proposals={displayedProposals} />
                     ) : (
-                        <div style={{ padding: '0 50px' }}>
-                            <h1 style={{ fontSize: '7rem', margin: 0, textTransform: 'uppercase' }}>
-                                {gameState.currentScene?.title}
-                            </h1>
-                            <div style={{ width: '40vw', height: '8px', background: '#00d4ff', margin: '40px auto' }}></div>
+                        /* --- DEFAULT FALLBACKS (Scenes like WAITING) --- */
+                        <div style={{ textAlign: 'center', width: '100%', animation: 'fadeIn 1s ease', margin: 'auto' }}>
+                            {scene?.type === 'WAITING' ? (
+                                // [comment] Hide text if displayTextOnScreen is false in config.json
+                                scene.params?.displayTextOnScreen !== false && (
+                                    <>
+                                        <h1 className="default-title" style={{ fontSize: '10rem', margin: 0 }}>
+                                            {scene.params?.titleDisplay === "SHOW_NOT_STARTED" ? "OPEN STAGE LIVE" : (scene.params?.titleDisplay || "OPEN STAGE LIVE")}
+                                        </h1>
+                                        {scene.params?.subTitle && (
+                                            <h2 className="default-subtitle" style={{ fontSize: '4rem', opacity: 0.8, marginTop: '20px' }}>{scene.params.subTitle}</h2>
+                                        )}
+                                    </>
+                                )
+                            ) : (
+                                <div style={{ padding: '0 50px' }}>
+                                    <h1 style={{ fontSize: '7rem', margin: 0, textTransform: 'uppercase' }}>
+                                        {scene?.title}
+                                    </h1>
+                                    <div style={{ width: '40vw', height: '8px', background: '#00d4ff', margin: '40px auto' }}></div>
+                                </div>
+                            )}
                         </div>
                     )}
-                </div>
+                </>
             )}
 
+            {/* [comment] Minimal fallback styles, can be overridden by customCss */}
             <style>
                 {`
                     body { margin: 0; padding: 0; background-color: black; }
+                    .default-title { color: #00d4ff; text-shadow: 0 0 60px rgba(0,212,255,0.6); }
+                    .custom-scene-container { animation: fadeIn 0.5s ease-out; }
                     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                     @keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
                     @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
