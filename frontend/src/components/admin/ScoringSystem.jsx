@@ -77,10 +77,16 @@ const ScoringSystem = ({ state, users, ui, onAddPoints, onReset, onToggleVisibil
                 {/* Reset Action */}
                 <button
                     className="btn-danger"
-                    style={{ marginTop: '10px', width: '100%' }}
+                    style={{
+                        marginTop: '10px',
+                        width: 'fit-content',
+                        alignSelf: 'center',
+                        padding: '10px 20px',
+                        fontSize: '0.8rem',
+                    }}
                     onClick={() => window.confirm(t(ui, 'CONFIRM_RESET_SCORES')) && onReset()}
                 >
-                    {t(ui, 'ADMIN_RESET_BTN')}
+                    {t(ui, 'ADMIN_SCORE_RESET_BTN')}
                 </button>
             </div>
         </section>

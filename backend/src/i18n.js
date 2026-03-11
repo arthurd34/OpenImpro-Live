@@ -75,8 +75,9 @@ const translations = {
 
         // --- ADMIN ACCESS & SCORING ---
         ADMIN_SCORES_TITLE: "Attribution des Points",
+        NO_PLAYERS_CONNECTED: "Aucun joueur connecté.",
         ADMIN_SCORES_VISIBILITY: "Afficher le classement sur les téléphones",
-        ADMIN_RESET_BTN: "Réinitialiser",
+        ADMIN_SCORE_RESET_BTN: "Réinitialiser les scores",
         CONFIRM_RESET_SCORES: "Voulez-vous vraiment remettre tous les scores à zéro ?",
         POINTS_SHORT: "pts",
         SCORE_CORRECTION_DESC: "Correction de score (-1)",
@@ -211,8 +212,9 @@ const translations = {
 
         // --- ADMIN ACCESS & SCORING ---
         ADMIN_SCORES_TITLE: "Points Attribution",
+        NO_PLAYERS_CONNECTED: "No players connected.",
         ADMIN_SCORES_VISIBILITY: "Show ranking on phones",
-        ADMIN_RESET_BTN: "Reset",
+        ADMIN_SCORE_RESET_BTN: "Reset scores",
         CONFIRM_RESET_SCORES: "Are you sure you want to reset all scores to zero?",
         POINTS_SHORT: "pts",
         SCORE_CORRECTION_DESC: "Score correction (-1)",
