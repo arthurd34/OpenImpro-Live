@@ -248,16 +248,6 @@ const AdminView = () => {
                         onRemoveCode={(code) => updateAccessConfig({ whitelist: accessConfig.whitelist.filter(c => c.code !== code) })}
                         newCodeInputRef={newCodeInputRef}
                     />
-
-                    {/* Scoring System with visibility toggle */}
-                    <ScoringSystem
-                        state={state}
-                        users={users}
-                        ui={ui}
-                        onAddPoints={(name, amount) => emitAdmin('admin_add_points', { playerName: name, amount })}
-                        onReset={() => emitAdmin('admin_reset_scores')}
-                        onToggleVisibility={(val) => emitAdmin('admin_toggle_score_visibility', { value: val })}
-                    />
                 </div>
 
                 <UserManagement
@@ -273,6 +263,16 @@ const AdminView = () => {
                         const newName = prompt(t(ui, 'ADMIN_PROMPT_RENAME'), oldName);
                         if (newName) emitAdmin('admin_rename_user', { socketId: id, newName });
                     }}
+                />
+
+                {/* Scoring System with visibility toggle */}
+                <ScoringSystem
+                    state={state}
+                    users={users}
+                    ui={ui}
+                    onAddPoints={(name, amount) => emitAdmin('admin_add_points', { playerName: name, amount })}
+                    onReset={() => emitAdmin('admin_reset_scores')}
+                    onToggleVisibility={(val) => emitAdmin('admin_toggle_score_visibility', { value: val })}
                 />
 
                 {/* Playlist Navigation */}
