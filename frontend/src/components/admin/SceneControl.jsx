@@ -2,7 +2,7 @@ import React from 'react';
 import ProposalAdmin from './ProposalAdmin';
 import { t } from '../../utils/i18n';
 
-const SceneControl = ({ currentScene, proposals, socket, token, emitAdmin, ui, isLive }) => {
+const SceneControl = ({ currentScene, proposals, socket, token, emitAdmin, ui, isLive, state, onAddPoints }) => {
     if (!currentScene) return null;
 
     // --- DYNAMIC STYLE ---
@@ -25,6 +25,9 @@ const SceneControl = ({ currentScene, proposals, socket, token, emitAdmin, ui, i
                         emitAdmin={emitAdmin}
                         ui={ui}
                         currentScene={currentScene}
+                        hasPoints={state?.hasPoints}
+                        scores={state?.scores}
+                        onAddPoints={onAddPoints}
                     />
                 );
 

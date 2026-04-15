@@ -316,6 +316,8 @@ const AdminView = () => {
                     emitAdmin={emitAdmin}
                     ui={ui}
                     isLive={state?.isLive}
+                    state={state}
+                    onAddPoints={(name, amount) => emitAdmin('admin_add_points', { playerName: name, amount })}
                 />
             </div>
             <Footer version={state?.version} ui={ui} />

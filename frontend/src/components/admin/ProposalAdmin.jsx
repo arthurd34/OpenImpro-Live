@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { t } from '../../utils/i18n';
 
-const ProposalAdmin = ({ ui, proposals, socket, token, currentScene }) => {
+const ProposalAdmin = ({ ui, proposals, socket, token, currentScene, hasPoints, scores, onAddPoints }) => {
     const [customText, setCustomText] = useState('');
     const [activePreset, setActivePreset] = useState(null);
     const presets = currentScene?.params?.presets || [];
@@ -143,40 +143,60 @@ const ProposalAdmin = ({ ui, proposals, socket, token, currentScene }) => {
                             </div>
                         </div>
 
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                            <button
-                                onClick={() => handleToggleDisplay(ans)}
-                                style={{
-                                    padding: '6px 12px',
-                                    fontSize: '0.75rem',
-                                    backgroundColor: ans.isDisplayed ? '#00d4ff' : 'rgba(255,255,255,0.1)',
-                                    color: 'white', border: 'none', borderRadius: '4px'
-                                }}
-                            >
-                                {ans.isDisplayed ? '📺 DIFFUSÉ' : '📺 DIFFUSER'}
-                            </button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <button
+                                    onClick={() => handleToggleDisplay(ans)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        fontSize: '0.75rem',
+                                        backgroundColor: ans.isDisplayed ? '#00d4ff' : 'rgba(255,255,255,0.1)',
+                                        color: 'white', border: 'none', borderRadius: '4px'
+                                    }}
+                                >
+                                    {ans.isDisplayed ? '📺 DIFFUSÉ' : '📺 DIFFUSER'}
+                                </button>
 
-                            <button
-                                onClick={() => handleToggleWinner(ans)}
-                                style={{
-                                    padding: '6px 12px',
-                                    fontSize: '0.75rem',
-                                    border: ans.isWinner ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.2)',
-                                    background: ans.isWinner ? 'transparent' : 'rgba(255,255,255,0.05)',
-                                    color: ans.isWinner ? '#f59e0b' : 'white',
-                                    borderRadius: '4px'
-                                }}
-                            >
-                                {ans.isWinner ? '❌ DÉMARQUER' : '🏆 GAGNANT'}
-                            </button>
+                                <button
+                                    onClick={() => handleToggleWinner(ans)}
+                                    style={{
+                                        padding: '6px 12px',
+                                        fontSize: '0.75rem',
+                                        border: ans.isWinner ? '1px solid #f59e0b' : '1px solid rgba(255,255,255,0.2)',
+                                        background: ans.isWinner ? 'transparent' : 'rgba(255,255,255,0.05)',
+                                        color: ans.isWinner ? '#f59e0b' : 'white',
+                                        borderRadius: '4px'
+                                    }}
+                                >
+                                    {ans.isWinner ? '❌ DÉMARQUER' : '🏆 GAGNANT'}
+                                </button>
 
-                            <button
-                                className="btn-danger"
-                                onClick={() => handleDelete(ans.id)}
-                                style={{ padding: '6px 10px', minWidth: '35px' }}
-                            >
-                                ✕
-                            </button>
+                                <button
+                                    className="btn-danger"
+                                    onClick={() => handleDelete(ans.id)}
+                                    style={{ padding: '6px 10px', minWidth: '35px' }}
+                                >
+                                    ✕
+                                </button>
+                            </div>
+
+                            {hasPoints && !ans.isAdmin && (
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                                    <small style={{ opacity: 0.4, marginRight: '4px', fontSize: '0.65rem' }}>
+                                        {scores?.[ans.userName] ?? 0} pts
+                                    </small>
+                                    {[1, 2, 3, 5].map(val => (
+                                        <button
+                                            key={val}
+                                            className="btn-small"
+                                            onClick={() => onAddPoints(ans.userName, val)}
+                                            style={{ fontSize: '0.7rem', padding: '3px 7px' }}
+                                        >
+                                            +{val}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
