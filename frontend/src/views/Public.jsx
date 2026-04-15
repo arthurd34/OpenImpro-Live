@@ -7,6 +7,7 @@ import ConnectionScene from '../components/scenes/ConnectionScene';
 import ProposalScene from '../components/scenes/ProposalScene';
 import WaitingScene from '../components/scenes/WaitingScene';
 import Leaderboard from '../components/scenes/Leaderboard';
+import PromoScene from '../components/scenes/PromoScene';
 import Footer from '../components/Footer';
 import ConnectionErrorOverlay from '../components/overlays/ConnectionErrorOverlay';
 import LatencyIndicator from '../components/LatencyIndicator';
@@ -324,6 +325,7 @@ const PublicView = () => {
                             case 'PROPOSAL':    return <ProposalScene {...sceneProps} />;
                             case 'WAITING':     return <WaitingScene {...sceneProps} />;
                             case 'LEADERBOARD': return <Leaderboard scores={gameState.scores} ui={ui} />;
+                            case 'PROMO':       return <PromoScene gameState={gameState} />;
                             default: return (
                                 <div style={{textAlign:'center', padding:'40px 20px', opacity: 0.5}}>
                                     <div className="spinner" style={{ margin: '0 auto 15px' }}></div>

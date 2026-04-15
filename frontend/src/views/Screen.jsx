@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import io from 'socket.io-client';
 import LeaderboardScreen from '../components/screen/LeaderboardScreen';
 import ProposalsScreen from '../components/screen/ProposalsScreen';
+import PromoScreen from '../components/screen/PromoScreen';
 import { useAssetPreloader } from '../utils/useAssetPreloader';
 import { useCustomTheme } from '../utils/useCustomTheme';
 
@@ -71,6 +72,7 @@ const ScreenView = () => {
     const backgroundUrl = getAssetUrl(currentBgId);
 
     const isLeaderboardScene = scene?.type === 'LEADERBOARD';
+    const isPromoScene = scene?.type === 'PROMO';
     const displayedProposals = gameState?.allProposals?.filter(p => p.isDisplayed) || [];
     const customHtml = scene?.uiOverrides?.customHtml;
 
@@ -96,6 +98,8 @@ const ScreenView = () => {
                 <>
                     {isLeaderboardScene ? (
                         <LeaderboardScreen scores={gameState.scores} />
+                    ) : isPromoScene ? (
+                        <PromoScreen scene={scene} />
                     ) : manualWinner ? (
                         <ProposalsScreen proposals={[manualWinner]} />
                     ) : displayedProposals.length > 0 ? (
