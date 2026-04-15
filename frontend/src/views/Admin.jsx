@@ -300,7 +300,13 @@ const AdminView = () => {
                             <button
                                 key={act.id}
                                 className={state.currentIndex === i ? "btn-primary" : ""}
-                                onClick={() => emitAdmin('admin_set_scene', { index: i })}
+                                onClick={() => {
+                                    if (i === state.currentIndex) return;
+                                    if (proposals.length > 0) {
+                                        if (!window.confirm(`⚠️ Il y a ${proposals.length} proposition(s) en cours.\nChanger de scène les supprimera définitivement.\n\nContinuer ?`)) return;
+                                    }
+                                    emitAdmin('admin_set_scene', { index: i });
+                                }}
                             >
                                 {act.title}
                             </button>

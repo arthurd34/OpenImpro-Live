@@ -369,8 +369,12 @@ io.on('connection', (socket) => {
     socket.on('admin_rename_user', adminAction((data) => adminManager.renameUser(socket, io, data, getContext())));
     socket.on('admin_set_scene', adminAction((data) => {
         state.currentSceneIndex = data.index;
+        state.allProposals = [];
+        state.activeUsers.forEach(u => { u.proposals = []; });
         persist();
         io.emit('sync_state', getSyncData());
+        io.to('admin_room').emit('admin_sync_proposals', []);
+        io.emit('user_history_update', []);
     }));
 
     socket.on('admin_clear_all_proposals', adminAction((data) => {
