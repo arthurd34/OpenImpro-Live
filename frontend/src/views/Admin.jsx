@@ -226,6 +226,7 @@ const AdminView = () => {
                         isUploading={isUploading}
                         isLive={state?.isLive}
                         ui={ui}
+                        token={token}
                         onLoad={(id) => emitAdmin('admin_load_show', { showId: id })}
                         onDelete={(id) => window.confirm(t(ui, 'ADMIN_CONFIRM_DELETE')) && emitAdmin('admin_delete_show', { showId: id })}
                         onUpload={handleFileUpload}

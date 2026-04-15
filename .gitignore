@@ -1,4 +1,5 @@
 node_modules/
 *.db
 .env
-backend/shows
+backend/shows/*
+!backend/shows/_template

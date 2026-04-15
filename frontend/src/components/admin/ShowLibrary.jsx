@@ -1,6 +1,8 @@
 import React from 'react';
 import { t } from '../../utils/i18n';
 
+const socketUrl = import.meta.env.VITE_BACKEND_URL;
+
 const ShowLibrary = ({
                          state,
                          availableShows,
@@ -11,8 +13,22 @@ const ShowLibrary = ({
                          onUpload,
                          fileInputRef,
                          emitAdmin, // Required for the toggle
-                         ui
+                         ui,
+                         token
                      }) => {
+    const handleDownload = (showId) => {
+        const url = `${socketUrl}/admin/download-show/${showId}`;
+        fetch(url, { headers: { 'x-admin-token': token } })
+            .then(res => res.blob())
+            .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `${showId}.zip`;
+                link.click();
+                URL.revokeObjectURL(blobUrl);
+            });
+    };
     return (
         <section className="card">
             <h3>{t(ui, 'ADMIN_SHOW_CONFIG_TITLE')}</h3>
@@ -37,7 +53,12 @@ const ShowLibrary = ({
                                     {isActive ? (
                                         <button
                                             title="Recharger le config.json depuis le disque"
-                                            onClick={() => emitAdmin('admin_reload_show')}
+                                            onClick={() => {
+                                                const msg = isLive
+                                                    ? `⚠️ Le spectacle est en cours !\nRecharger "${showId}" expulsera tous les joueurs connectés.\n\nContinuer ?`
+                                                    : `Recharger le spectacle "${showId}" ?`;
+                                                if (window.confirm(msg)) emitAdmin('admin_reload_show');
+                                            }}
                                         >
                                             🔄 Recharger
                                         </button>
@@ -51,7 +72,10 @@ const ShowLibrary = ({
                                             {t(ui, 'ADMIN_BTN_LOAD')}
                                         </button>
                                     )}
-                                    <button className="btn-danger" onClick={() => onDelete(showId)}>🗑</button>
+                                    <button title="Télécharger en ZIP" onClick={() => handleDownload(showId)}>⬇️</button>
+                                    {showId !== '_template' && (
+                                        <button className="btn-danger" onClick={() => onDelete(showId)}>🗑</button>
+                                    )}
                                 </div>
                             </div>
                         );

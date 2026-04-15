@@ -216,6 +216,29 @@ app.post('/admin/upload-show', async (req, res) => {
     }
 });
 
+app.get('/admin/download-show/:showId', (req, res) => {
+    const token = req.headers['x-admin-token'];
+    if (!isValidAdmin(token)) return res.status(401).send('Unauthorized');
+
+    const showId = req.params.showId;
+    const showPath = path.join(__dirname, '..', 'shows', showId);
+
+    if (!fs.existsSync(showPath)) return res.status(404).send('Show not found');
+
+    try {
+        const AdmZip = require('adm-zip');
+        const zip = new AdmZip();
+        zip.addLocalFolder(showPath);
+        const buffer = zip.toBuffer();
+        res.setHeader('Content-Type', 'application/zip');
+        res.setHeader('Content-Disposition', `attachment; filename="${showId}.zip"`);
+        res.send(buffer);
+    } catch (err) {
+        console.error("Download error:", err);
+        res.status(500).send({ error: err.message });
+    }
+});
+
 // --- SOCKET EVENTS ---
 
 io.on('connection', (socket) => {
@@ -311,6 +334,7 @@ io.on('connection', (socket) => {
     }));
 
     socket.on('admin_delete_show', adminAction(async (data) => {
+        if (data.showId === '_template') return;
         await ShowManager.deleteShow(data.showId);
         socket.emit('admin_shows_list', await ShowManager.listShows());
     }));
@@ -318,7 +342,10 @@ io.on('connection', (socket) => {
     socket.on('admin_reload_show', adminAction(() => {
         if (!state.activeShowId) return;
         loadShowConfig(state.activeShowId);
-        broadcastUpdate({ withProposals: true });
+        state.currentSceneIndex = 0;
+        state.isLive = false;
+        clearProposals();
+        broadcastUpdate({ withProposals: true, withUserHistory: true });
     }));
 
     socket.on('admin_load_show', adminAction((data) => {

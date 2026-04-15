@@ -1,0 +1,22 @@
+/* =====================================================
+   CSS personnalisé pour le grand écran (screen)
+   Placez vos styles ici pour personnaliser l'affichage
+   sur la projection. Ce fichier n'affecte PAS les téléphones.
+   ===================================================== */
+
+/* Exemple : police personnalisée depuis Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&display=swap');
+
+/* Exemple : surcharge du titre par défaut */
+.default-title {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 900;
+    color: #00d4ff;
+    text-shadow: 0 0 60px rgba(0, 212, 255, 0.5);
+}
+
+.default-subtitle {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    opacity: 0.8;
+}

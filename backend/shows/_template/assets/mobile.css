@@ -1,0 +1,12 @@
+/* =====================================================
+   CSS personnalisé pour les téléphones (public)
+   Ce fichier n'affecte PAS le grand écran.
+   ===================================================== */
+
+/* Exemple : changer la couleur d'accentuation sur mobile */
+:root {
+    --primary: #00d4ff;
+}
+
+/* Exemple : personnaliser le bouton d'envoi */
+/* .btn-primary { background: linear-gradient(135deg, #00d4ff, #0099bb); } */
