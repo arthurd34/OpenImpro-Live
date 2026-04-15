@@ -345,6 +345,9 @@ io.on('connection', (socket) => {
 
     socket.on('admin_toggle_live', adminAction((data) => {
         state.isLive = data.value;
+        if (state.isLive === true) {
+            state.currentSceneIndex = 0;
+        }
         if (state.isLive === false) {
             state.activeUsers = [];
             state.pendingRequests = [];
